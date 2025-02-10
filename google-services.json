@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "585626519839",
+    "project_id": "seysi-224ce",
+    "storage_bucket": "seysi-224ce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585626519839:android:712fc50882465e96de082a",
+        "android_client_info": {
+          "package_name": "com.sezeyee.seysipad"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "585626519839-aga0aeek1ic4kdi0a4mi8ahktj4ou42i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sezeyee.seysipad",
+            "certificate_hash": "730264923173e3f9ab70273151c2da8248140dc1"
+          }
+        },
+        {
+          "client_id": "585626519839-9svc6er2qnvn7548t6vjocm03ap2cjc3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfjXknRoUIdZullD4VVIiSU-TjRv46iXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "585626519839-9svc6er2qnvn7548t6vjocm03ap2cjc3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
