@@ -8,11 +8,15 @@ export const unstable_settings = {
 };
 
 export default function LoginScreen() {
-  const { signIn, user, loading, error, signInWithGoogle} = useAuth();
+  const { signIn, user, loading, error/*, signInWithGoogle*/} = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleLogin = async () => {
+    await signIn(email, password);
+  };
 
   useEffect(() => {
     const backAction = () => {
@@ -64,7 +68,14 @@ export default function LoginScreen() {
       ) : (
         <>
           <Button title="Giriş Yap" onPress={() => signIn(email, password)} />
-          <Button title="Google ile Giriş Yap" onPress={signInWithGoogle} />
+          {/* {error && (
+            <View>
+              <Text style={{ color: "red" }}>{error}</Text>
+              {error.includes("doğrulanmamış") && (
+                <Button title="Doğrulama E-postasını Tekrar Gönder" onPress={resendVerificationEmail} />
+              )}
+            </View>
+          )} */}
           </>
       )}
 

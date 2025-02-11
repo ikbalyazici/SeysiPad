@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, TextInput, Button, Alert } from "react-native";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { View, TextInput, Button, Alert, Text } from "react-native";
+import { createUserWithEmailAndPassword, sendEmailVerification, deleteUser } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../constants/firebaseConfig";
 import { useAuth } from "../hooks/useAuth";
@@ -15,11 +15,11 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  useEffect(() => {
-    if (user) {
-      router.replace("/(tabs)");
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (user && user.emailVerified) {
+  //     router.replace("/login");
+  //   }
+  // }, [user]);
 
   const handleSignup = async () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -55,7 +55,17 @@ export default function SignupScreen() {
       await setDoc(doc(db, "users", user.uid), { username, email });
       await setDoc(doc(db, "usernames", username), { uid: user.uid });
 
-      Alert.alert("Başarılı", "Kayıt başarılı!");
+      await sendEmailVerification(user);
+      Alert.alert("Başarılı", "Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.");
+
+      // 24 saat içinde doğrulanmazsa hesabı sil
+      setTimeout(async () => {
+        await user.reload(); // Kullanıcının en son durumunu güncelle
+        if (!user.emailVerified) {
+          await deleteUser(user);
+          Alert.alert("Hata", "E-posta doğrulanmadığı için hesabınız silindi.");
+        }
+      }, 10 * 60 * 1000); // 24 saat
     } catch (error) {
       Alert.alert("Hata", error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.");
     }
@@ -95,6 +105,9 @@ export default function SignupScreen() {
       />
 
       <Button title="Kayıt Ol" onPress={handleSignup} />
+      <Text style={{ marginTop: 10, color: "gray", textAlign: "center" }}>
+        Kayıt olduktan sonra lütfen e-posta adresinizi doğrulayın.
+      </Text>
     </View>
   );
 }

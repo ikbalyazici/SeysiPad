@@ -31,7 +31,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Anasayfa",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={"dark"} />
           ),
@@ -44,6 +44,16 @@ export default function TabLayout() {
           title: "Bölümler",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book" size={size} color={"dark"} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profilim",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={"dark"} />
           ),
         }}
       />
