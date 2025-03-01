@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "esModuleInterop": true,
+    "moduleResolution": "nodenext",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "types": ["node"],  // 🔹 React Native tiplerini dışarıda bırak, sadece Node.js tiplerini al
+    "skipLibCheck": true // 🔹 Tip çakışmalarını önlemek için
+  },
+  "compileOnSave": true,
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",   // 🔹 Derlenmiş dosyalar projeye karışmasın
+    "**/__tests__/**"
+  ]
+}

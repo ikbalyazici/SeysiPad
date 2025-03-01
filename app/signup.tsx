@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { View, TextInput, Button, Alert, Text } from "react-native";
+import { View, TextInput, Button, Alert, Text, StatusBar, StyleSheet, TouchableOpacity } from "react-native";
 import { createUserWithEmailAndPassword, sendEmailVerification, deleteUser } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../constants/firebaseConfig";
 import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
 
 export default function SignupScreen() {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ export default function SignupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { theme } = useTheme(); // Mevcut temayı al
 
   // useEffect(() => {
   //   if (user && user.emailVerified) {
@@ -72,42 +74,69 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+    <View style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: theme.background }}>
+      <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
       <TextInput
         placeholder="Kullanıcı Adı"
         value={username}
         onChangeText={setUsername}
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        placeholderTextColor={theme.inputPlaceholder}
+        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
       <TextInput
         placeholder="E-posta"
         value={email}
         onChangeText={setEmail}
+        placeholderTextColor={theme.inputPlaceholder}
         keyboardType="email-address"
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
       <TextInput
         placeholder="Şifre"
         value={password}
         onChangeText={setPassword}
+        placeholderTextColor={theme.inputPlaceholder}
         secureTextEntry
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
       <TextInput
         placeholder="Şifreyi Tekrar Gir"
         value={confirmPassword}
         onChangeText={setConfirmPassword}
+        placeholderTextColor={theme.inputPlaceholder}
         secureTextEntry
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
-      <Button title="Kayıt Ol" onPress={handleSignup} />
-      <Text style={{ marginTop: 10, color: "gray", textAlign: "center" }}>
+      <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSignup}>
+        <Text style={styles.buttonText}>{"Kayıt Ol"}</Text>
+      </TouchableOpacity>
+      <Text style={{ marginTop: 10, color: theme.text, textAlign: "center" }}>
         Kayıt olduktan sonra lütfen e-posta adresinizi doğrulayın.
       </Text>
     </View>
   );
 }
+const styles = StyleSheet.create({
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 15,
+  },
+  submitButton: {
+    alignSelf: "center",
+    width: "90%",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+});

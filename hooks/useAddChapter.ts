@@ -1,26 +1,38 @@
-import { collection, addDoc, getDocs, query, orderBy } from "firebase/firestore";
+import { useState } from "react";
 import { db } from "../constants/firebaseConfig";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useAuth } from "./useAuth";
 
-export const addChapter = async (title: string, content: string) => {
-  try {
-    // Mevcut bölümleri sıraya göre al
-    const chaptersRef = collection(db, "chapters");
-    const q = query(chaptersRef, orderBy("index", "desc"));
-    const snapshot = await getDocs(q);
+export function useAddChapter() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // En son eklenen bölümü bul
-    const lastIndex = snapshot.docs.length > 0 ? snapshot.docs[0].data().index : 0;
+  const addChapter = async (bookId: string, title: string, content: string) => {
+    if (!user) return { success: false, message: "Giriş yapmalısınız." };
+    if (!bookId) return { success: false, message: "Geçersiz kitap ID." };
+    if (!title || !content) return { success: false, message: "Başlık ve içerik boş olamaz." };
 
-    // Yeni bölümü 1 artan index ile ekle
-    await addDoc(chaptersRef, {
-      title,
-      content,
-      index: lastIndex + 1,
-      createdAt: new Date(),
-    });
+    setLoading(true);
+    setError(null);
 
-    console.log("Yeni bölüm eklendi!");
-  } catch (error) {
-    console.error("Bölüm ekleme hatası:", error);
-  }
-};
+    try {
+      await addDoc(collection(db, "chapters"), {
+        bookId, // Kitap ile bağlantıyı sağlıyoruz
+        authorUid: user.uid,
+        title,
+        content,
+        createdAt: serverTimestamp(),
+      });
+
+      return { success: true };
+    } catch (err: any) {
+      setError(err.message);
+      return { success: false, message: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { addChapter, loading, error };
+}

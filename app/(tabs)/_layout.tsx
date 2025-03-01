@@ -1,50 +1,51 @@
 import { Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
-
+import { useNotifications } from "../../hooks/useNotifications";
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/useThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { unreadCount } = useNotifications();
+  const { theme } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "dark"].tint,
+        tabBarActiveTintColor: theme.tint,
+        tabBarInactiveTintColor: theme.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: theme.background,
+          borderTopColor: theme.tabIconDefault,
+          position: "absolute",
+        },
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: "absolute",
-          },
-          default: {},
-        }),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Anasayfa",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={"dark"} />
-          ),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
 
       <Tabs.Screen
-        name="chapters"
+        name="books"
         options={{
-          title: "Bölümler",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book" size={size} color={"dark"} />
-          ),
+          title: "Kitaplar",
+          tabBarIcon: ({ color }) => <Ionicons name="book" size={28} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Bildirimler",
+          tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
+          tabBarBadge: unreadCount || undefined,
         }}
       />
 
@@ -52,9 +53,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profilim",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={"dark"} />
-          ),
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={28} color={color} />,
         }}
       />
     </Tabs>

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../constants/firebaseConfig";
 import {
-  GoogleAuthProvider,
-  signInWithCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendEmailVerification,
@@ -11,30 +9,63 @@ import {
   User,
   updateProfile,
   reload,
+  sendPasswordResetEmail,
+  updatePassword,
+  updateEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import * as Google from "expo-auth-session/providers/google";
-import { makeRedirectUri } from "expo-auth-session";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState(true);
+
+  // 📌 AsyncStorage'den oturumu yükleme
+  const loadStoredUser = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+  
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+  
+        // 📌 Kullanıcı verisini Firebase Auth ile karşılaştır
+        const currentUser = auth.currentUser;
+  
+        if (currentUser && currentUser.uid === parsedUser.uid) {
+          setUser(currentUser);
+        } else {
+          setUser(null);
+          await AsyncStorage.removeItem("user"); // Eşleşme yoksa siliyoruz
+        }
+      }
+    } catch (error) {
+      console.error("Stored user could not be loaded:", error);
+    }
+  };
+  
 
   useEffect(() => {
+    loadStoredUser(); // 📌 İlk önce AsyncStorage’den kullanıcıyı al
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        await reload(currentUser); // Kullanıcı durumunu güncelle
+        await reload(currentUser);
         if (!currentUser.emailVerified) {
-          setUser(null); // Eğer e-posta doğrulanmamışsa giriş yapma
+          setUser(null);
         } else {
           setUser(currentUser);
+          await AsyncStorage.setItem("user", JSON.stringify(currentUser)); // 📌 Firebase oturumu gelince AsyncStorage’e kaydet
         }
       } else {
         setUser(null);
+        await AsyncStorage.removeItem("user"); // 📌 Çıkış yapınca kaydı temizle
       }
+      setInitializing(false);
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -57,7 +88,7 @@ export function useAuth() {
       await setDoc(usernameRef, { uid: newUser.uid });
 
       await sendEmailVerification(newUser);
-      await signOut(auth); // Kayıttan sonra hemen çıkış yap, doğrulama olmadan girişe izin verme
+      await signOut(auth);
 
       setUser(null);
     } catch (err: any) {
@@ -73,14 +104,15 @@ export function useAuth() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
 
-      await reload(loggedInUser); // Kullanıcıyı güncelle
+      await reload(loggedInUser);
 
       if (!loggedInUser.emailVerified) {
-        await signOut(auth); // Doğrulanmamışsa hemen çıkış yap
+        await signOut(auth);
         throw new Error("Lütfen e-posta adresinizi doğrulayın!");
       }
 
       setUser(loggedInUser);
+      await AsyncStorage.setItem("user", JSON.stringify(loggedInUser)); // 📌 Kullanıcıyı sakla
     } catch (err: any) {
       setError(err.message);
     }
@@ -90,37 +122,39 @@ export function useAuth() {
   const logout = async () => {
     await signOut(auth);
     setUser(null);
+    await AsyncStorage.removeItem("user"); // 📌 Çıkış yapınca AsyncStorage'deki kullanıcıyı sil
     router.replace("/login");
   };
 
-  // // Google Auth (Expo AuthSession)
-  // const redirectUri = makeRedirectUri({ useProxy: true } as any);
-  // const [request, response, promptAsync] = Google.useAuthRequest({
-  //   clientId: "585626519839-9svc6er2qnvn7548t6vjocm03ap2cjc3.apps.googleusercontent.com",
-  //   androidClientId: "585626519839-huh6vfpdps75on38sg1ptkj69f60ivo9.apps.googleusercontent.com",
-  //   iosClientId: "585626519839-lgdea0jcf0lqe6dea2o1i8teorlcub4.apps.googleusercontent.com",
-  //   redirectUri,
-  // });
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
 
-  // const signInWithGoogle = async () => {
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     const result = await promptAsync();
-  //     if (result.type !== "success") {
-  //       throw new Error("Google authentication failed");
-  //     }
+  const changePassword = async (newPassword: string) => {
+    if (!user) return { success: false, message: "Kullanıcı oturum açmış değil." };
+    try {
+      await updatePassword(user, newPassword);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
 
-  //     const { id_token } = result.params;
-  //     const credential = GoogleAuthProvider.credential(id_token);
-  //     const userCredential = await signInWithCredential(auth, credential);
+  const changeEmail = async (newEmail: string) => {
+    if (!user) return { success: false, message: "Kullanıcı oturum açmış değil." };
+    try {
+      await updateEmail(user, newEmail);
+      await sendEmailVerification(user);
+      return { success: true, message: "E-posta değiştirildi. Lütfen doğrulayın!" };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  };
 
-  //     setUser(userCredential.user);
-  //   } catch (error: any) {
-  //     setError(error.message);
-  //   }
-  //   setLoading(false);
-  // };
-
-  return { user, signUp, signIn, logout,/* signInWithGoogle,*/ loading, error };
+  return { user, initializing, signUp, signIn, logout, loading, error, resetPassword, changePassword, changeEmail };
 }

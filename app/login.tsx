@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, Button, ActivityIndicator, Alert, BackHandler, StatusBar } from "react-native";
+import { View, Text, TextInput, Button, ActivityIndicator, Alert, BackHandler, StatusBar, TouchableOpacity ,StyleSheet } from "react-native";
 import { useAuth } from "../hooks/useAuth";
 import { usePathname, useRouter } from "expo-router";
+import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
 
 export const unstable_settings = {
   headerBackVisible: false,
@@ -13,6 +14,7 @@ export default function LoginScreen() {
   const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { theme } = useTheme(); // Mevcut temayı al
 
   const handleLogin = async () => {
     await signIn(email, password);
@@ -43,9 +45,16 @@ export default function LoginScreen() {
   }, [user]);
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
-      <StatusBar hidden />
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Giriş Yap</Text>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        padding: 20,
+        backgroundColor: theme.background, // Temaya uygun arka plan rengi
+      }}
+    >
+      <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20, color: theme.text }}>Giriş Yap</Text>
 
       {error && <Text style={{ color: "red" }}>{error}</Text>}
 
@@ -53,38 +62,50 @@ export default function LoginScreen() {
         placeholder="E-posta"
         value={email}
         onChangeText={setEmail}
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={{ borderWidth: 1, padding: 10, marginBottom: 10, borderRadius:12, borderColor: theme.tint, backgroundColor: theme.inputBackground }}
       />
       <TextInput
         placeholder="Şifre"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={{ borderWidth: 1, padding: 10, borderRadius:12, marginBottom: 10, borderColor: theme.tint, backgroundColor: theme.inputBackground }}
       />
 
       {loading ? (
         <ActivityIndicator />
       ) : (
         <>
-          <Button title="Giriş Yap" onPress={() => signIn(email, password)} />
-          {/* {error && (
-            <View>
-              <Text style={{ color: "red" }}>{error}</Text>
-              {error.includes("doğrulanmamış") && (
-                <Button title="Doğrulama E-postasını Tekrar Gönder" onPress={resendVerificationEmail} />
-              )}
-            </View>
-          )} */}
+          <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={() => signIn(email, password)} disabled={loading}>
+            <Text style={styles.buttonText}>{loading ? "Giriş Yapılıyor..." : "Giriş Yap"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push("/forgot-password")}>
+            <Text style={{ color: theme.tint, marginTop: 10 }}>Şifreni mi unuttun?</Text>
+          </TouchableOpacity>
           </>
       )}
 
       <Text
         onPress={() => router.push("/signup")}
-        style={{ marginTop: 20, textAlign: "center", color: "blue" }}
+        style={{ marginTop: 20, textAlign: "center", color: theme.tint}}
       >
         Hesabın yok mu? Kayıt ol
       </Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  submitButton: {
+    alignSelf: "center",
+    width: "100%",
+    padding: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+});
+

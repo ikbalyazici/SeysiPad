@@ -1,25 +1,37 @@
 import { useState, useEffect } from "react";
-import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
+import { collection, query, where, orderBy, onSnapshot } from "firebase/firestore";
 import { db } from "../constants/firebaseConfig";
 
-export function useFetchChapters() {
+export function useFetchChapters(bookId?: string) {
   const [chapters, setChapters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "chapters"), orderBy("createdAt", "desc"));
+    if (!bookId) return;
+    setLoading(true);
+    setError(null);
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedChapters = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setChapters(fetchedChapters);
-      setLoading(false);
-    });
+    const q = query(
+      collection(db, "chapters"),
+      where("bookId", "==", bookId), // Sadece belirli kitabın bölümlerini alıyoruz
+      orderBy("createdAt", "asc")
+    );
 
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        setChapters(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        setLoading(false);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+    
     return () => unsubscribe();
-  }, []);
+  }, [bookId]);
 
-  return { chapters, loading };
+  return { chapters, loading, error };
 }
