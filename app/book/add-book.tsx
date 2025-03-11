@@ -6,6 +6,8 @@ import { addBook } from "../../hooks/useAddBook";
 import { useUploadBookCover } from "../../hooks/useUploadBookCover";
 import { useTheme } from "@/hooks/useThemeContext"; 
 import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AddBookScreen() {
   const auth = useAuth();
@@ -16,6 +18,7 @@ export default function AddBookScreen() {
   const [description, setDescription] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   // 📌 Resim seçme fonksiyonu
   const pickImage = async () => {
@@ -34,12 +37,12 @@ export default function AddBookScreen() {
   // 📌 Kitap ekleme işlemi
   const handleAddBook = async () => {
     if (!user) {
-      Alert.alert("Hata", "Giriş yapmış bir kullanıcı bulunamadı.");
+      Alert.alert(t("hata"), t("kimseyok"));
       return;
     }
 
     if (!title.trim()) {
-      Alert.alert("Hata", "Kitap adı boş olamaz.");
+      Alert.alert(t("hata"), t("kitapadılazım"));
       return;
     }
 
@@ -62,14 +65,16 @@ export default function AddBookScreen() {
         }
       }
 
-      Alert.alert("Başarılı", "Kitap başarıyla eklendi!");
+      Alert.alert(t("basarili"), t("kitapeklendi"));
 
       // 📌 Form temizleme
       setTitle("");
       setDescription("");
       setCoverImage(null);
+      router.back();
     } catch (error) {
-      Alert.alert("Hata", "Kitap eklenirken bir hata oluştu.");
+      console.error(error);
+      Alert.alert(t("hata"), t("kitapeklehata"));
     }
 
     setLoading(false);
@@ -79,40 +84,40 @@ export default function AddBookScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
       
-      <Text style={[styles.label, { color: theme.text }]}>Kitap Adı</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("kitapadi")}</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Kitabınızın adını girin"
+        placeholder={t("kitapadigir")}
         placeholderTextColor={theme.inputPlaceholder}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
-      <Text style={[styles.label, { color: theme.text }]}>Açıklama</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("aciklama")}</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
-        placeholder="Kitabınızı tanıtın"
+        placeholder={t("kitaptanit")}
         maxLength={1000}
         placeholderTextColor={theme.inputPlaceholder}
         multiline
         style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
-      <Text style={[styles.label, { color: theme.text }]}>Kapak Resmi</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("kapakresmi")}</Text>
       {coverImage ? (
         <Image source={{ uri: coverImage }} style={styles.coverImage} />
       ) : (
-        <Text style={[styles.placeholderText, { color: theme.text }]}>Kapak resmi seçilmedi</Text>
+        <Text style={[styles.placeholderText, { color: theme.text }]}>{t("kapakresmisecilmedi")}</Text>
       )}
 
       <TouchableOpacity style={[styles.imageButton, { backgroundColor: theme.tint }]} onPress={pickImage}>
         <MaterialIcons name="photo-library" size={20} color="white" />
-        <Text style={styles.buttonText}>Kapak Resmi Seç</Text>
+        <Text style={styles.buttonText}>{t("kapakresmisec")}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleAddBook} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Ekleniyor..." : "Kitap Ekle"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("ekleniyor") : t("kitapekle")}</Text>
       </TouchableOpacity>
     </View>
   );

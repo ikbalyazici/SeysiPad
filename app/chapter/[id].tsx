@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   FlatList,
   TextInput,
-  Button,
   Alert,
   Pressable,
   KeyboardAvoidingView,
@@ -24,6 +23,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { FontAwesome, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useThemeContext"; 
 import FontSelector from "../book/FontSelector";
+import { useLanguage } from "@/context/LanguageContext";
+import { useFont } from "../context/FontContext";
+import LikeButton from "./LikeButton";
 
 type Chapter = {
   id: string;
@@ -49,10 +51,10 @@ export default function ChapterDetailScreen() {
   const [nextChapter, setNextChapter] = useState<Chapter | null>(null);
   const [readStatus, setReadStatus] = useState<"false" | "partial" | "true">("false");
   const { theme } = useTheme(); 
-  const [selectedFont, setSelectedFont] = useState<string>("Roboto-Italic");
-  const [fontSize, setFontSize] = useState<number>(16);
+  const { selectedFont, fontSize } = useFont();
   const commentListRef = useRef<FlatList<Comment>>(null); // Yorum listesini refere et
   const [menuVisible, setMenuVisible] = useState(false);
+  const { t } = useLanguage();
   const fetchReadStatus = async () => {
     if (!user || !chapter) return;
   
@@ -159,30 +161,44 @@ export default function ChapterDetailScreen() {
 
   const handleDelete = async () => {
     if (!id || !user || !chapter) return;
-
+  
     if (user.uid !== chapter.authorUid) {
-      Alert.alert("Yetkisiz işlem", "Bu bölümü silme yetkiniz yok.");
+      Alert.alert(t("yetkisizislem"), t("bolumsilemen"));
       return;
     }
-
-    Alert.alert("Bölümü Sil", "Bu bölümü silmek istediğinizden emin misiniz?", [
-      { text: "İptal", style: "cancel" },
+  
+    Alert.alert(t("bolumusil"), t("bolumusileminmisin"), [
+      { text: t("iptal"), style: "cancel" },
       {
-        text: "Sil",
+        text: t("sil"),
         onPress: async () => {
           try {
             const chapterRef = doc(db, "chapters", id as string);
-            await deleteDoc(chapterRef);
-            Alert.alert("Başarılı", "Bölüm silindi.");
-            router.push(`/book/${chapter.bookId}`);
+            const commentsQuery = query(
+              collection(db, "comments"),
+              where("chapterId", "==", id)
+            );
+  
+            // Yorumları çek ve sil
+            const commentsSnapshot = await getDocs(commentsQuery);
+            const deletePromises = commentsSnapshot.docs.map((doc) =>
+              deleteDoc(doc.ref)
+            );
+  
+            await Promise.all(deletePromises); // Tüm yorumları sil
+  
+            await deleteDoc(chapterRef); // Bölümü sil
+            Alert.alert(t("basarili"), t("bolumsilindi"));
+            router.back();
           } catch (err) {
-            console.error("Bölüm silinirken hata:", err);
-            Alert.alert("Hata", "Bölüm silinirken bir hata oluştu.");
+            console.error(t("bolumsilhata"), err);
+            Alert.alert(t("hata"), t("bolumsilhataoldu"));
           }
         },
       },
     ]);
   };
+  
 
   const trackChapterProgress = async (userId: string, bookId: string, chapterId: string) => {
     if (!userId || !chapterId) return;
@@ -225,10 +241,8 @@ export default function ChapterDetailScreen() {
   };  
 
   const getStatusText = () => {
-    return readStatus === "true" ? "Bölümü okudum 😎" : "Bölümü yarım bıraktım 🥺";
+    return readStatus === "true" ? t("okudum"): t("yarimkaldi");
   };
-  
-  
 
   if (loading) {
     return (
@@ -270,16 +284,16 @@ export default function ChapterDetailScreen() {
                 }}
               >
                 <Pressable onPress={() => router.push(`/book/edit-chapter?id=${id}`)}>
-                  <Text style={{ color: theme.text, paddingVertical: 5 }}>Düzenle</Text>
+                  <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("duzenle")}</Text>
                 </Pressable>
                 <Pressable onPress={handleDelete}>
-                  <Text style={{ color: "red", paddingVertical: 5 }}>Bölümü Sil</Text>
+                  <Text style={{ color: "red", paddingVertical: 5 }}>{t("bolumusil")}</Text>
                 </Pressable>
               </View>
             )}
 
-            <FontSelector selectedFont={selectedFont} setSelectedFont={setSelectedFont} fontSize={fontSize} setFontSize={setFontSize}  />
-
+            <FontSelector />
+            
             {paragraphs.map((paragraph: string, index: number) => (
               <Pressable
                 key={index}
@@ -298,25 +312,29 @@ export default function ChapterDetailScreen() {
               </Pressable>
             ))}
 
-            <TouchableOpacity onPress={toggleReadStatus} style={{ alignItems: "flex-end", marginTop: 20 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Text style={{ fontSize: 16, color: getIconColor() }}>{getStatusText()}</Text>
-                <FontAwesome name="check-circle" size={24} color={getIconColor()} />
-              </View>
-            </TouchableOpacity>
+            <View style={{flex:1, flexDirection:"row", justifyContent: "space-between"}}>
+              <TouchableOpacity onPress={toggleReadStatus} style={{ alignItems: "flex-end", marginTop: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <FontAwesome name="check-circle" size={24} color={getIconColor()} />
+                  <Text style={{ fontSize: 16, color: getIconColor() }}>{getStatusText()}</Text>                
+                </View>
+              </TouchableOpacity>
+
+              <LikeButton contentId={`chapter_${id}`} />   // Bölüm beğenisi
+            </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20 }}>
               {previousChapter ? (
-                <TouchableOpacity style={[styles.routeButton, { backgroundColor: theme.tint }]} onPress={() => router.push(`/chapter/${previousChapter.id}`)}>
-                  <Text style={styles.buttonText}>{"Önceki Bölüm"}</Text>
+                <TouchableOpacity style={[styles.routeButton, { backgroundColor: theme.tint }]} onPress={() => router.replace(`/chapter/${previousChapter.id}`)}>
+                  <Text style={styles.buttonText}>{t("oncekibolum")}</Text>
                 </TouchableOpacity>
               ) : (
                 <View />
               )}
 
               {nextChapter ? (
-                <TouchableOpacity style={[styles.routeButton, { backgroundColor: theme.tint }]} onPress={() => router.push(`/chapter/${nextChapter.id}`)}>
-                  <Text style={styles.buttonText}>{"Sonraki Bölüm"}</Text>
+                <TouchableOpacity style={[styles.routeButton, { backgroundColor: theme.tint }]} onPress={() => router.replace(`/chapter/${nextChapter.id}`)}>
+                  <Text style={styles.buttonText}>{t("sonrakibolum")}</Text>
                 </TouchableOpacity>
               ) : (
                 <View />
@@ -324,7 +342,7 @@ export default function ChapterDetailScreen() {
             </View>
 
             <View style={{ marginBottom: 10 }}>
-              <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>Yorumlar</Text>
+              <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>{t("yorumlar")}</Text>
             </View>
           </>
         }
@@ -340,16 +358,16 @@ export default function ChapterDetailScreen() {
                 setReplyToCommentId(item.id);
                 setModalVisible(true);
               }} style={{ fontSize: 12, fontStyle: "italic", color: theme.tint, marginBottom: 5 }}>
-                {`"${paragraphs[parseInt(item.sentenceId, 10)].slice(0, 50)}..."`} üzerine yorum yapıldı.
+                {`"${paragraphs[parseInt(item.sentenceId, 10)].slice(0, 50)}..."`} {t("alıntı")}
               </Text>
             )}
         
             {/* PROFİL FOTOĞRAFI + KULLANICI ADI + YORUM */}
             <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
               {/* Profil Fotoğrafı */}
-              {item.author.photoURL && (
+
                 <Image
-                  source={{ uri: item.author.photoURL }}
+                  source={{ uri: item.author.photoURL || "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/profile_images%2Fno_profile_picture%2Ficone-x-avec-cercle-gris.png?alt=media&token=78a3007c-c98c-49b8-97cc-f8bf4f01098e"}}
                   style={{
                     width: 30,
                     height: 30,
@@ -357,7 +375,6 @@ export default function ChapterDetailScreen() {
                     marginRight: 10,
                   }}
                 />
-              )}
 
               {/* Kullanıcı Adı, Yorum Metni ve Silme İkonu */}
               <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -369,16 +386,7 @@ export default function ChapterDetailScreen() {
                   <Text style={{color: theme.text}}>{item.text}</Text>
                 </View>
 
-                {/* Silme Butonu */}
-                {user?.uid === item.authorUid && (
-                  <Ionicons
-                    onPress={() => deleteComment(item.id, item.authorUid)}
-                    name="trash"
-                    size={15}
-                    color={"red"}
-                    style={{ marginLeft: 10 }}
-                  />
-                )}
+                <LikeButton contentId={`comment_${item.id}`} /> // Yorum beğenisi
               </View>
             </View>
         
@@ -394,13 +402,14 @@ export default function ChapterDetailScreen() {
                       paddingLeft: 10,
                       borderLeftWidth: 1,
                       borderColor: "#ccc",
-                      marginTop: 5,
+                      marginTop: 20,
+                      position: "relative",  // Bu, silme butonunu dışarıya yerleştirebilmemiz için gerekiyor
                     }}
                   >
                     {/* PROFİL FOTOĞRAFI */}
                     {reply.author.photoURL && (
                       <Image
-                        source={{ uri: reply.author.photoURL }}
+                        source={{ uri: reply.author.photoURL || "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/profile_images%2Fno_profile_picture%2Ficone-x-avec-cercle-gris.png?alt=media&token=78a3007c-c98c-49b8-97cc-f8bf4f01098e" }}
                         style={{
                           width: 30,
                           height: 30,
@@ -411,69 +420,98 @@ export default function ChapterDetailScreen() {
                       />
                     )}
 
-                    {/* KULLANICI ADI, YANIT METNİ VE SİLME İKONU */}
-                    <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    {/* KULLANICI ADI, YANIT METNİ VE BEĞENİ BUTONU */}
+                    <View style={{ flex: 1, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
                       {/* Kullanıcı Adı ve Yanıt Metni */}
                       <View style={{ flexShrink: 1 }}>
                         <Text onPress={() => router.push(`/profile/${reply.authorUid}`)} style={{ fontWeight: "bold", color: theme.text }}>
                           {reply.author.username}
                         </Text>
-                        <Text style={{color: theme.text}}>{reply.text}</Text>
+                        <Text style={{ color: theme.text }}>{reply.text}</Text>
                       </View>
-
-                      {/* Silme Butonu */}
-                      {user?.uid === reply.authorUid && (
-                        <Ionicons
-                          onPress={() => deleteComment(reply.id, reply.authorUid, reply.parentId)}
-                          name="trash"
-                          size={15}
-                          color={"red"}
-                          style={{ marginLeft: 10 }}
-                        />
-                      )}
+                      <LikeButton contentId={`reply_${reply.id}`}/> {/* Yanıt beğenisi */}
                     </View>
+
+                    {/* Silme Butonu (Sağ Altta) */}
+                    {user?.uid === reply.authorUid && (
+                      <TouchableOpacity
+                        onPress={() => deleteComment(reply.id, reply.authorUid, reply.parentId)}
+                        style={{
+                          position: "absolute",  // Silme butonunu dikdörtgen dışında konumlandırmak için
+                          bottom: -20,  // Dikdörtgenin altında biraz boşluk
+                          right: 0,  // Sağ altta konumlandırma
+                        }}
+                      >
+                        <Text style={{ color: "red", fontSize: 14 }}>{t("yanıtsil")}</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 ))}
               </View>
             )}
-            
-            {/* YANITLA BUTONU */}
-            <TouchableOpacity onPress={() =>{ 
-              setReplyToCommentId(item.id);
-              setModalVisible(true);
-              }}>
-              <Text style={{ color: theme.tint, marginTop: 5 }}>Yanıtla</Text>
-            </TouchableOpacity>
+
+           <View style={{ flex: 1, flexDirection: "row", alignItems: "center", marginTop: 10 }}>
+              {/* YANITLA BUTONU */}
+              <TouchableOpacity 
+                onPress={() => { 
+                  setReplyToCommentId(item.id);
+                  setModalVisible(true);
+                }} 
+              >
+                <Text style={{ color: theme.tint }}>{t("yanıtla")}</Text>
+              </TouchableOpacity>
+
+              {/* Silme Butonu */}
+              {user?.uid === item.authorUid && (
+                <TouchableOpacity onPress={() => deleteComment(item.id, item.authorUid)} style={{ marginLeft:20 }}>
+                  <Text style={{ color: "red" }}>{t("yorumusil")}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
           </View>
         )}
       />
 
       <KeyboardAvoidingView behavior="position">
-        <View style={{ padding: 10, borderTopWidth: 1, borderColor: theme.tint}}>
-          <TextInput
-            placeholder="Yorum yaz..."
-            value={newComment}
-            onChangeText={setNewComment}
+        <View style={{ padding: 10, borderTopWidth: 1, borderColor: theme.tint }}>
+          <View 
             style={{
+              flexDirection: "row",
+              alignItems: "center",
               borderWidth: 1,
               borderColor: theme.tint,
-              padding: 10,
               borderRadius: 10,
-              marginBottom: 10,
-              backgroundColor: "#E0F8FF" 
+              backgroundColor: theme.inputBackground,
+              paddingHorizontal: 10,
             }}
-          />
-          <Button
-            title="Gönder"
-            onPress={async () => {
-              if (newComment.trim()) {
-                await addComment(newComment);
-                setNewComment("");
-              }
-            }}
-          />
+          >
+            <TextInput
+              placeholder={t("yorumyaz")}
+              value={newComment}
+              onChangeText={setNewComment}
+              style={{
+                flex: 1,
+                paddingVertical: 10, // Dikey ortalamak için
+                color: theme.inputText,
+              }}
+            />
+            
+            <TouchableOpacity
+              onPress={async () => {
+                if (newComment.trim()) {
+                  await addComment(newComment);
+                  setNewComment("");
+                }
+              }}
+              style={{ padding: 2 }} // Butona dokunma alanı vermek için
+            >
+              <MaterialIcons name="send" size={30} color={theme.tint} />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
+
 
       <Modal visible={isModalVisible} transparent animationType="slide">
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
@@ -484,7 +522,7 @@ export default function ChapterDetailScreen() {
               </Text>
             )}
             <TextInput
-              placeholder={replyToCommentId ? "Yanıt yaz..." : "Yorum yaz..."}
+              placeholder={replyToCommentId ? t("yanıtyaz") : t("yorumyaz")}
               value={newComment}
               onChangeText={setNewComment}
               style={{
@@ -493,7 +531,7 @@ export default function ChapterDetailScreen() {
                 padding: 10,
                 borderRadius: 10,
                 marginBottom: 10,
-                backgroundColor: "#E0F8FF" 
+                backgroundColor: theme.inputBackground
               }}
             />
             <TouchableOpacity 
@@ -507,10 +545,10 @@ export default function ChapterDetailScreen() {
                 }
               }}
               disabled={loading}>
-              <Text style={styles.buttonText}>{"Gönder"}</Text>
+              <Text style={styles.buttonText}>{t("gonder")}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setModalVisible(false)} style={{ marginTop: 10 }}>
-              <Text style={{ color: "red", textAlign: "center" }}>İptal</Text>
+              <Text style={{ color: "red", textAlign: "center" }}>{t("iptal")}</Text>
             </TouchableOpacity>
           </View>
         </View>

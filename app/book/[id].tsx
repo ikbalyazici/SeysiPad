@@ -8,6 +8,7 @@ import { useFetchChapters } from "../../hooks/useFetchChapters";
 import { deleteObject, getStorage, listAll, ref } from "firebase/storage";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useThemeContext"; 
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -19,6 +20,9 @@ export default function BookDetailScreen() {
   const [readStatuses, setReadStatuses] = useState<Record<string, "false" | "partial" | "true">>({}); 
   const { theme } = useTheme(); 
   const [menuVisible, setMenuVisible] = useState(false);
+  const { t } = useLanguage();
+
+  const [sortAscending, setSortAscending] = useState(true); // Başlangıçta en eski bölüm üstte olacak
 
   type Book = {
     authorUid: string;
@@ -27,6 +31,14 @@ export default function BookDetailScreen() {
     description: string;
     coverURL: string;
   };
+
+  // Chapters sıralaması
+  const sortedChapters = [...chapters].sort((a, b) => {
+    const aTime = a.createdAt.seconds;
+    const bTime = b.createdAt.seconds;
+
+    return sortAscending ? aTime - bTime : bTime - aTime;
+  });
 
   useEffect(() => {
     const fetchBookAndAuthor = async () => {
@@ -70,14 +82,14 @@ export default function BookDetailScreen() {
     if (!id || !user || !book) return;
 
     if (user.uid !== book.authorUid) {
-      Alert.alert("Yetkisiz işlem", "Bu kitabı silme yetkiniz yok.");
+      Alert.alert(t("yetkisizislem"), t("kitapsilemen"));
       return;
     }
 
-    Alert.alert("Kitabı Sil", "Bu kitabı ve tüm bölümlerini silmek istediğinizden emin misiniz?", [
-      { text: "İptal", style: "cancel" },
+    Alert.alert(t("kitabısil"), t("kitabısileminmisin"), [
+      { text: t("iptal"), style: "cancel" },
       {
-        text: "Sil",
+        text: t("sil"),
         onPress: async () => {
           try {
             const chaptersRef = collection(db, "chapters");
@@ -113,11 +125,11 @@ export default function BookDetailScreen() {
             const bookRef = doc(db, "books", id as string);
             await deleteDoc(bookRef);
 
-            Alert.alert("Başarılı", "Kitap ve tüm bölümleri silindi.");
-            router.push("/(tabs)");
+            Alert.alert(t("basarili"), t("kitapsilindi"));
+            router.back();
           } catch (err) {
-            console.error("Kitap silinirken hata:", err);
-            Alert.alert("Hata", "Kitap silinirken bir hata oluştu.");
+            console.error(t("kitapsilhata"), err);
+            Alert.alert(t("hata"), t("kitapsilhataoldu"));
           }
         },
       },
@@ -159,13 +171,13 @@ export default function BookDetailScreen() {
           }}
         >
           <Pressable onPress={() => router.push(`/book/edit-book?id=${id}`)}>
-            <Text style={{ color: theme.text, paddingVertical: 5 }}>Kitabı Düzenle</Text>
+            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("kitapduzenle")}</Text>
           </Pressable>
           <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
-            <Text style={{ color: theme.text, paddingVertical: 5 }}>Bölüm Ekle</Text>
+            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("bolumekle")}</Text>
           </Pressable>
           <Pressable onPress={handleDelete}>
-            <Text style={{ color: "red", paddingVertical: 5 }}>Kitabı Sil</Text>
+            <Text style={{ color: "red", paddingVertical: 5 }}>{t("kitabısil")}</Text>
           </Pressable>
         </View>
       )}
@@ -174,7 +186,7 @@ export default function BookDetailScreen() {
 
       <Pressable onPress={() => router.push(`/profile/${book.authorUid}`)}>
         <Text style={{ color: theme.tint, marginTop: 4 }}>
-          Yazar: {authorUsername || "Yükleniyor..."}
+          {t("yazar")} {authorUsername || t("yükleniyor")}
         </Text>
       </Pressable>
 
@@ -185,21 +197,30 @@ export default function BookDetailScreen() {
       )}
 
       <Text style={{ fontSize: 16, marginBottom: 20, color: theme.text }}>{book?.description}</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+        <Text style={{ color: theme.text }}>{t("bolumler")}</Text>
 
-      <Text style={{ marginTop: 8, color:theme.text }}>Bölümler:</Text>
+        {/* Sıralama yönünü değiştiren ikon */}
+        <TouchableOpacity onPress={() => setSortAscending(!sortAscending)}>
+          <MaterialIcons name={sortAscending ? "arrow-circle-up" : "arrow-circle-down"} size={30} color={theme.text} />
+        </TouchableOpacity>
+      </View>
+
+
       {user?.uid === book.authorUid && (
         <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
         <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.tint }}>
           <FontAwesome name="plus-circle" size={24} color= {theme.text} />
-          <Text style={{color:theme.text, marginLeft:10, fontWeight:"bold", fontSize:15, fontFamily:"Comic-Neue"}}>{"Yeni Bölüm Ekle"}</Text>
+          <Text style={{color:theme.text, marginLeft:10, fontWeight:"bold", fontSize:15, fontFamily:"Comic-Neue"}}>{t("yenibolumekle")}</Text>
         </View>
       </Pressable>
       )}
+
       {loading ? (
         <ActivityIndicator size="small" />
       ) : (
         <FlatList
-          data={chapters}
+          data={sortedChapters}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`/chapter/${item.id}`)}>

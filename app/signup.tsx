@@ -6,48 +6,43 @@ import { auth, db } from "../constants/firebaseConfig";
 import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "expo-router";
 import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function SignupScreen() {
   const { user } = useAuth();
   const router = useRouter();
-
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const { theme } = useTheme(); // Mevcut temayı al
 
-  // useEffect(() => {
-  //   if (user && user.emailVerified) {
-  //     router.replace("/login");
-  //   }
-  // }, [user]);
-
   const handleSignup = async () => {
     if (!username || !email || !password || !confirmPassword) {
-      Alert.alert("Hata", "Tüm alanları doldurun!");
+      Alert.alert(t("hata"), t("tumalanlaridoldur"));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Hata", "Şifreler eşleşmiyor!");
+      Alert.alert(t("hata"), t("sifreeslesmiyor"));
       return;
     }
 
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(password)) {
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/.test(password)) {
       Alert.alert(
-        "Hata",
-        "Şifre en az 8 karakter olmalı, büyük harf, küçük harf, sayı ve özel karakter içermelidir!"
+        t("hata"),
+        t("sifrehatasi")
       );
       return;
-    }
+    }    
 
     try {
       const usernameRef = doc(db, "usernames", username);
       const usernameSnap = await getDoc(usernameRef);
 
       if (usernameSnap.exists()) {
-        Alert.alert("Hata", "Bu kullanıcı adı zaten alınmış!");
+        Alert.alert(t("hata"), t("nickalinmis"));
         return;
       }
 
@@ -58,18 +53,12 @@ export default function SignupScreen() {
       await setDoc(doc(db, "usernames", username), { uid: user.uid });
 
       await sendEmailVerification(user);
-      Alert.alert("Başarılı", "Kayıt başarılı! Lütfen e-posta adresinizi doğrulayın.");
+      Alert.alert(t("basarili"), t("epostadogrula"));
+      router.back();
 
-      // 24 saat içinde doğrulanmazsa hesabı sil
-      setTimeout(async () => {
-        await user.reload(); // Kullanıcının en son durumunu güncelle
-        if (!user.emailVerified) {
-          await deleteUser(user);
-          Alert.alert("Hata", "E-posta doğrulanmadığı için hesabınız silindi.");
-        }
-      }, 10 * 60 * 1000); // 24 saat
+      // 10 dakika içinde doğrulanmazsa hesabı sil
     } catch (error) {
-      Alert.alert("Hata", error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.");
+      Alert.alert(t("hata"), error instanceof Error ? error.message : t("bilinmeyenhata"));
     }
   };
 
@@ -77,7 +66,7 @@ export default function SignupScreen() {
     <View style={{ flex: 1, justifyContent: "center", padding: 20, backgroundColor: theme.background }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
       <TextInput
-        placeholder="Kullanıcı Adı"
+        placeholder={t("kullaniciadi")}
         value={username}
         onChangeText={setUsername}
         placeholderTextColor={theme.inputPlaceholder}
@@ -85,7 +74,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
-        placeholder="E-posta"
+        placeholder={t("eposta")}
         value={email}
         onChangeText={setEmail}
         placeholderTextColor={theme.inputPlaceholder}
@@ -94,7 +83,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
-        placeholder="Şifre"
+        placeholder={t("sifre")}
         value={password}
         onChangeText={setPassword}
         placeholderTextColor={theme.inputPlaceholder}
@@ -103,7 +92,7 @@ export default function SignupScreen() {
       />
 
       <TextInput
-        placeholder="Şifreyi Tekrar Gir"
+        placeholder={t("sifretekrar")}
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         placeholderTextColor={theme.inputPlaceholder}
@@ -112,10 +101,10 @@ export default function SignupScreen() {
       />
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSignup}>
-        <Text style={styles.buttonText}>{"Kayıt Ol"}</Text>
+        <Text style={styles.buttonText}>{t("kayıtol")}</Text>
       </TouchableOpacity>
       <Text style={{ marginTop: 10, color: theme.text, textAlign: "center" }}>
-        Kayıt olduktan sonra lütfen e-posta adresinizi doğrulayın.
+        {t("kayitdogrula")}
       </Text>
     </View>
   );

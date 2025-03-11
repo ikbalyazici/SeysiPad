@@ -5,10 +5,12 @@ import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/useThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function TabLayout() {
   const { unreadCount } = useNotifications();
   const { theme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <Tabs
@@ -23,11 +25,13 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
       }}
+      //initialRouteName=""
+      backBehavior="history"
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Anasayfa",
+          title: t("anasayfa"),
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
@@ -35,7 +39,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="books"
         options={{
-          title: "Kitaplar",
+          title: t("kitaplar"),
           tabBarIcon: ({ color }) => <Ionicons name="book" size={28} color={color} />,
         }}
       />
@@ -43,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Bildirimler",
+          title: t("bildirimler"),
           tabBarIcon: ({ color }) => <Ionicons name="notifications" size={28} color={color} />,
           tabBarBadge: unreadCount || undefined,
         }}
@@ -52,7 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profilim",
+          title: t("profilim"),
           tabBarIcon: ({ color }) => <Ionicons name="person" size={28} color={color} />,
         }}
       />

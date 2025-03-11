@@ -5,6 +5,8 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig"; // Firebase bağlantısını doğru verdiğinden emin ol
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "@/hooks/useThemeContext"; 
+import { useLanguage } from "@/context/LanguageContext";
+
 
 export default function EditChapterScreen() {
   const { id } = useLocalSearchParams(); // 📌 ID'yi al
@@ -15,11 +17,12 @@ export default function EditChapterScreen() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const {t } = useLanguage();
 
   useEffect(() => {
     const fetchChapter = async () => {
       if (!id) {
-        setError("Bölüm ID bulunamadı.");
+        setError(t("bolumidyok"));
         setLoading(false);
         return;
       }
@@ -33,10 +36,10 @@ export default function EditChapterScreen() {
           setTitle(chapterData.title);
           setContent(chapterData.content);
         } else {
-          setError("Bölüm bulunamadı.");
+          setError(t("bolumyok"));
         }
       } catch (err) {
-        setError("Bölüm yüklenirken hata oluştu.");
+        setError(t("bolumyuklehata"));
       } finally {
         setLoading(false);
       }
@@ -47,15 +50,21 @@ export default function EditChapterScreen() {
 
   const handleSave = async () => {
     if (!id || !user) return;
-    
+
+    if (!title || !content) {
+      setError(t("bosolamazlar"));
+      return { 
+        success: false };
+    }
+
     try {
       setLoading(true);
       const chapterRef = doc(db, "chapters", id as string);
       await updateDoc(chapterRef, { title, content });
 
-      router.push(`/chapter/${id}`);
+      router.back();
     } catch (err) {
-      setError("Bölüm güncellenirken hata oluştu.");
+      setError(t("bolumguncelhata"));
     } finally {
       setLoading(false);
     }
@@ -73,13 +82,13 @@ export default function EditChapterScreen() {
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color:theme.text }}>Bölümü Düzenle</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color:theme.text }}>{t("bolumduzenle")}</Text>
       {error && <Text style={{ color: "red" }}>{error}</Text>}
 
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Bölüm Başlığı"
+        placeholder={t("bolumbasligi")}
         placeholderTextColor={theme.inputPlaceholder}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
@@ -87,7 +96,7 @@ export default function EditChapterScreen() {
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="Bölüm İçeriği"
+        placeholder={t("bolumicerigi")}
         maxLength={30000}
         placeholderTextColor={theme.inputPlaceholder}
         multiline
@@ -95,7 +104,7 @@ export default function EditChapterScreen() {
       />
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSave} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Kaydediliyor..." : "Kaydet"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("kaydediliyor") : t("kaydet")}</Text>
       </TouchableOpacity>
     </View>
   );

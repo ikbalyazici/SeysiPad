@@ -2,16 +2,18 @@ import { useState } from "react";
 import { db } from "../constants/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useAuth } from "./useAuth";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function useAddChapter() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const addChapter = async (bookId: string, title: string, content: string) => {
-    if (!user) return { success: false, message: "Giriş yapmalısınız." };
-    if (!bookId) return { success: false, message: "Geçersiz kitap ID." };
-    if (!title || !content) return { success: false, message: "Başlık ve içerik boş olamaz." };
+    if (!user) return { success: false, message: t("girisyapin") };
+    if (!bookId) return { success: false, message: t("gecersizkitapid")};
+    if (!title || !content) return { success: false, message: t("bosolamazlar") };
 
     setLoading(true);
     setError(null);

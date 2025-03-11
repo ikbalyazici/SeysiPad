@@ -5,8 +5,7 @@ import { auth, db } from "../../constants/firebaseConfig";
 import { useRouter } from "expo-router";
 import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
 import { useTheme } from "@/hooks/useThemeContext"; 
-
-
+import { useLanguage } from "@/context/LanguageContext";
 
 type Notification = {
   id: string;
@@ -30,6 +29,7 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const currentUser = auth.currentUser;
   const { theme } = useTheme(); 
+  const { t } = useLanguage();
 
   const styles = StyleSheet.create({
     notification: {
@@ -104,7 +104,7 @@ export default function NotificationsScreen() {
       // Bildirimlere kullanıcı bilgisini ekle
       const notificationsWithSenders = rawNotifications.map((notification) => ({
         ...notification,
-        sender: userMap[notification.senderUid] || { username: "Bilinmeyen", photoURL: null },
+        sender: userMap[notification.senderUid] || { username: t("bilinmeyen"), photoURL: null },
       }));
 
       setNotifications(notificationsWithSenders);
@@ -119,7 +119,7 @@ export default function NotificationsScreen() {
       await deleteDoc(doc(db, "notifications", notificationId));
       setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     } catch (error) {
-      console.error("Bildirim silme hatası:", error);
+      console.error(t("bilsilhata"), error);
     }
   };
 
@@ -136,7 +136,7 @@ export default function NotificationsScreen() {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
         <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-        <Text style={{ textAlign: "center", marginTop: 20, color: theme.text }}>Henüz bir bildiriminiz yok.</Text>;
+        <Text style={{ textAlign: "center", marginTop: 20, color: theme.text }}>{t("bildirimyok")}</Text>;
       </View>
     );
   }
@@ -151,7 +151,7 @@ export default function NotificationsScreen() {
           <Swipeable
             renderRightActions={() => (
               <Pressable onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
-                <Text style={styles.deleteText}>Sil</Text>
+                <Text style={styles.deleteText}>{t("sil")}</Text>
               </Pressable>
             )}
           >
@@ -178,7 +178,7 @@ export default function NotificationsScreen() {
                     )
                   );
                 } catch (error) {
-                  console.error("Bildirim güncellenirken hata oluştu:", error);
+                  console.error(t("bilgüncelhata"), error);
                 }
               }}
               style={[styles.notification, !item.read && styles.unreadNotification]}
@@ -199,8 +199,8 @@ export default function NotificationsScreen() {
                     {item.sender.username}
                   </Text>
                   {item.type === "new_comment"
-                    ? ` kitabına yeni bir yorum yaptı: "${item.text}"`
-                    : ` yorumuna yanıt verdi: "${item.text}"`}
+                    ? `${t("yorumbildirim")} "${item.text}"`
+                    : `${t("yanıtbildirim")} "${item.text}"`}
                 </Text>
               </View>
             </Pressable>

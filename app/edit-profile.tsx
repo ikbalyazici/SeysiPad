@@ -3,16 +3,17 @@ import { View, TextInput, Button, Image, Alert, StatusBar, Text, StyleSheet, Tou
 import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { db, storage } from "../constants/firebaseConfig";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { updateProfile } from "firebase/auth";
 import { useTheme } from "@/hooks/useThemeContext"; 
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function EditProfileScreen() {
   const { user } = useAuth();
   const router = useRouter();
-
+  const { t } = useLanguage();
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [image, setImage] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export default function EditProfileScreen() {
 
   const uploadImage = async (uri: string): Promise<string | null> => {
     if (!uri || uri.trim() === "" || !user) {
-      Alert.alert("Hata", "Geçersiz işlem.");
+      Alert.alert(t("hata"), t("gecersizislem"));
       return null;
     }
 
@@ -77,7 +78,7 @@ export default function EditProfileScreen() {
         );
       });
     } catch (error) {
-      Alert.alert("Hata", "Fotoğraf yüklenirken bir hata oluştu.");
+      Alert.alert(t("hata"), t("fotoyuklehata"));
       return null;
     }
   };
@@ -85,7 +86,7 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     if (!user) return;
     if (!username.trim()) {
-      Alert.alert("Hata", "Kullanıcı adı boş bırakılamaz.");
+      Alert.alert(t("hata"), t("nickbos"));
       return;
     }
     setLoading(true);
@@ -95,7 +96,7 @@ export default function EditProfileScreen() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        Alert.alert("Hata", "Kullanıcı bulunamadı.");
+        Alert.alert(t("hata"), t("kulyok"));
         return;
       }
 
@@ -108,7 +109,7 @@ export default function EditProfileScreen() {
         const usernameSnap = await getDoc(usernameRef);
 
         if (usernameSnap.exists()) {
-          Alert.alert("Hata", "Bu kullanıcı adı zaten alınmış!");
+          Alert.alert(t("hata"), t("nickalinmis"));
           setLoading(false);
           return;
         }
@@ -118,7 +119,7 @@ export default function EditProfileScreen() {
 
         // Eski kullanıcı adını `usernames` koleksiyonundan sil
         if (currentData.username) {
-          await updateDoc(doc(db, "usernames", currentData.username), { uid: null });
+          await deleteDoc(doc(db, "usernames", currentData.username));
         }
       }
 
@@ -153,14 +154,14 @@ export default function EditProfileScreen() {
       // Firestore'daki profili güncelle
       if (Object.keys(updatedData).length > 0) {
         await updateDoc(userRef, updatedData);
-        Alert.alert("Başarılı", "Profiliniz güncellendi!");
+        Alert.alert(t("basarili"), t("profguncel"));
       } else {
-        Alert.alert("Bilgi", "Herhangi bir değişiklik yapılmadı.");
+        Alert.alert(t("bilgi"), t("herseyayni"));
       }
 
       router.back();
     } catch (error) {
-      Alert.alert("Hata", "Profil güncellenirken bir hata oluştu.");
+      Alert.alert(t("hata"), t("profguncelhata"));
     } finally {
       setLoading(false);
     }
@@ -176,11 +177,11 @@ export default function EditProfileScreen() {
       )}
   
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={pickImage} disabled={loading}>
-        <Text style={styles.buttonText}>{"Fotoğraf Seç"}</Text>
+        <Text style={styles.buttonText}>{t("fotosec")}</Text>
       </TouchableOpacity>
 
       <TextInput
-        placeholder="Kullanıcı Adı"
+        placeholder={t("kullaniciadi")}
         value={username}
         onChangeText={setUsername}
         placeholderTextColor={theme.inputPlaceholder}
@@ -188,7 +189,7 @@ export default function EditProfileScreen() {
       />
 
       <TextInput
-        placeholder="Biyografi"
+        placeholder={t("bio")}
         value={bio}
         onChangeText={setBio}
         maxLength={500}
@@ -198,11 +199,11 @@ export default function EditProfileScreen() {
       />
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={() => router.push("/change-password")} disabled={loading}>
-        <Text style={styles.buttonText}>{"Şifreyi değiştir"}</Text>
+        <Text style={styles.buttonText}>{t("sifredegis")}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSave} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Kaydediliyor..." : "Kaydet"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("kaydediliyor") : t("kaydet")}</Text>
       </TouchableOpacity>
     </View>
   );

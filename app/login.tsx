@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, ActivityIndicator, Alert, BackHandler, S
 import { useAuth } from "../hooks/useAuth";
 import { usePathname, useRouter } from "expo-router";
 import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
+import { useLanguage } from "@/context/LanguageContext";
 
 export const unstable_settings = {
   headerBackVisible: false,
@@ -15,17 +16,15 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { theme } = useTheme(); // Mevcut temayı al
+  const { t } = useLanguage();
 
-  const handleLogin = async () => {
-    await signIn(email, password);
-  };
 
   useEffect(() => {
     const backAction = () => {
       if (pathname === "/login") {
-        Alert.alert("Çıkış", "Uygulamadan çıkmak istiyor musunuz?", [
-          { text: "Hayır", style: "cancel" },
-          { text: "Evet", onPress: () => BackHandler.exitApp() },
+        Alert.alert(t("cikis"), t("cikmakmiistiyon"), [
+          { text: t("hayir"), style: "cancel" },
+          { text: t("evet"), onPress: () => BackHandler.exitApp() },
         ]);
         return true; // Geri tuşunu engelle
       }
@@ -54,18 +53,18 @@ export default function LoginScreen() {
       }}
     >
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20, color: theme.text }}>Giriş Yap</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20, color: theme.text }}>{t("girisyap")}</Text>
 
       {error && <Text style={{ color: "red" }}>{error}</Text>}
 
       <TextInput
-        placeholder="E-posta"
+        placeholder={t("eposta")}
         value={email}
         onChangeText={setEmail}
         style={{ borderWidth: 1, padding: 10, marginBottom: 10, borderRadius:12, borderColor: theme.tint, backgroundColor: theme.inputBackground }}
       />
       <TextInput
-        placeholder="Şifre"
+        placeholder={t("sifre")}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -77,10 +76,10 @@ export default function LoginScreen() {
       ) : (
         <>
           <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={() => signIn(email, password)} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? "Giriş Yapılıyor..." : "Giriş Yap"}</Text>
+            <Text style={styles.buttonText}>{loading ? t("girisyapiliyor") : t("girisyap")}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => router.push("/forgot-password")}>
-            <Text style={{ color: theme.tint, marginTop: 10 }}>Şifreni mi unuttun?</Text>
+            <Text style={{ color: theme.tint, marginTop: 10 }}>{t("sifremiunuttun")}</Text>
           </TouchableOpacity>
           </>
       )}
@@ -89,7 +88,7 @@ export default function LoginScreen() {
         onPress={() => router.push("/signup")}
         style={{ marginTop: 20, textAlign: "center", color: theme.tint}}
       >
-        Hesabın yok mu? Kayıt ol
+        {t("hesapyokmu")}
       </Text>
     </View>
   );

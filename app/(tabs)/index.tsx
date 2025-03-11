@@ -5,12 +5,13 @@ import { useEffect, useState } from "react";
 import { db } from "@/constants/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function HomeScreen() {
   const { loading } = useAuth();
   const router = useRouter();
   const { theme } = useTheme(); // Mevcut temayı al
-
+  const { language, setLanguage, t } = useLanguage();
   const [book, setBook] = useState<{ id: string; title: string; coverURL?: string } | null>(null);
   const FEATURED_BOOK_ID = "Kd08Yc2LfBi3NXDc38JY"; // Öne çıkan kitabın ID'si
 
@@ -54,7 +55,7 @@ export default function HomeScreen() {
       }}
     >
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 44, fontWeight: "bold", color: theme.text }}>Hoş geldin!</Text>
+      <Text style={{ fontSize: 44, fontWeight: "bold", color: theme.text }}>{t("hosgeldin")}</Text>
 
       {/* Kitap Bilgisi */}
       <Pressable onPress={() => router.push(`/book/${book.id}`)} style={{ alignItems: "center", marginTop: 20 }}>

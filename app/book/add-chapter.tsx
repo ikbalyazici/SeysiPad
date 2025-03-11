@@ -4,6 +4,8 @@ import { View, Text, TextInput, StatusBar, StyleSheet, TouchableOpacity } from "
 import { useAuth } from "../../hooks/useAuth";
 import { useAddChapter } from "../../hooks/useAddChapter";
 import { useTheme } from "@/hooks/useThemeContext"; 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function AddChapterScreen() {
   const { bookId } = useLocalSearchParams(); 
 
@@ -15,6 +17,7 @@ export default function AddChapterScreen() {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleAddChapter = async () => {
     if (!bookId || !user) return;
@@ -24,7 +27,7 @@ export default function AddChapterScreen() {
     const result = await addChapter(bookId as string, title, content);
     
     if (result.success) {
-      router.push(`/book/${bookId}`); // Bölüm eklenince kitaba geri dön
+      router.back(); // Bölüm eklenince kitaba geri dön
     } else {
       setError(result.message);
     }
@@ -35,13 +38,13 @@ export default function AddChapterScreen() {
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>Yeni Bölüm Ekle</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>{t("yenibolumekle")}</Text>
       {error && <Text style={{ color: "red" }}>{error}</Text>}
 
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Bölüm Başlığı"
+        placeholder={t("bolumbasligi")}
         placeholderTextColor={theme.inputPlaceholder}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
@@ -49,7 +52,7 @@ export default function AddChapterScreen() {
       <TextInput
         value={content}
         onChangeText={setContent}
-        placeholder="Bölüm İçeriği"
+        placeholder={t("bolumicerigi")}
         maxLength={30000}
         placeholderTextColor={theme.inputPlaceholder}
         multiline
@@ -57,7 +60,7 @@ export default function AddChapterScreen() {
       />
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleAddChapter} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Ekleniyor..." : "Bölüm Ekle"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("ekleniyor") : t("bolumekle")}</Text>
       </TouchableOpacity>
     </View>
   );

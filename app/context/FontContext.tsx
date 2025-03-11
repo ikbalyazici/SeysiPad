@@ -1,42 +1,52 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-type FontContextType = {
+interface FontContextType {
   selectedFont: string;
-  changeFont: (font: string) => void;
-};
+  setSelectedFont: (font: string) => void;
+  fontSize: number;
+  setFontSize: (size: number) => void;
+}
 
-const FontContext = createContext<FontContextType | null>(null);
+const FontContext = createContext<FontContextType | undefined>(undefined);
 
 export const FontProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedFont, setSelectedFont] = useState("Roboto-Regular");
+  const [selectedFont, setSelectedFont] = useState("Roboto-Regular"); // Varsayılan font
+  const [fontSize, setFontSize] = useState(16); // Varsayılan font boyutu
 
+  // AsyncStorage'dan kayıtlı font ve font boyutunu al
   useEffect(() => {
-    const loadFont = async () => {
-      const savedFont = await AsyncStorage.getItem("selectedFont");
-      if (savedFont) {
-        setSelectedFont(savedFont);
-      }
+    const loadFontSettings = async () => {
+      const storedFont = await AsyncStorage.getItem("selectedFont");
+      const storedFontSize = await AsyncStorage.getItem("fontSize");
+
+      if (storedFont) setSelectedFont(storedFont);
+      if (storedFontSize) setFontSize(parseInt(storedFontSize));
     };
-    loadFont();
+
+    loadFontSettings();
   }, []);
 
-  const changeFont = async (font: string) => {
-    setSelectedFont(font);
-    await AsyncStorage.setItem("selectedFont", font);
-  };
+  // Font değiştiğinde AsyncStorage'a kaydet
+  useEffect(() => {
+    AsyncStorage.setItem("selectedFont", selectedFont);
+  }, [selectedFont]);
 
+  // Font boyutu değiştiğinde AsyncStorage'a kaydet
+  useEffect(() => {
+    const saveFontSize = async () => {
+      await AsyncStorage.setItem("fontSize", fontSize.toString());
+    };
+    saveFontSize();
+  }, [fontSize]);
+  
   return (
-    <FontContext.Provider value={{ selectedFont, changeFont }}>
+    <FontContext.Provider value={{ selectedFont, setSelectedFont, fontSize, setFontSize }}>
       {children}
     </FontContext.Provider>
   );
 };
 
-// 🚀 Default export ekledik!
-export default FontProvider;
-
-// Custom hook
 export const useFont = () => {
   const context = useContext(FontContext);
   if (!context) {
@@ -44,3 +54,5 @@ export const useFont = () => {
   }
   return context;
 };
+
+export default FontProvider;

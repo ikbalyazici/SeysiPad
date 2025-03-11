@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { View, Text, Image, FlatList, Alert, Pressable, StatusBar, Switch, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { auth, db } from "../../constants/firebaseConfig";
-import { collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { useAuth } from "../../hooks/useAuth";
 import { useFetchBooks } from "../../hooks/useFetchBooks";
 import { deleteUser } from "firebase/auth";
 import { deleteObject, getStorage, listAll, ref } from "firebase/storage";
 import { useTheme } from "@/hooks/useThemeContext";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -17,6 +18,9 @@ export default function ProfileScreen() {
   const { books, loading, error } = useFetchBooks(true, user?.uid);
   const { theme, toggleTheme, isDarkMode } = useTheme();
   const [menuVisible, setMenuVisible] = useState(false);
+  const { t } = useLanguage();
+  const [followers, setFollowers] = useState<string[]>([]); // Takipçileri tutacak state
+  const [followings, setFollowings] = useState<string[]>([]); // Takip edilenleri tutacak state
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,6 +32,25 @@ export default function ProfileScreen() {
       }
     };
     fetchProfile();
+
+    if(user){
+      const followersRef = collection(db, "users", user.uid, "followers");
+      const unsubscribeFollowers = onSnapshot(followersRef, (snapshot) => {
+        const followersData = snapshot.docs.map((doc) => doc.id);
+        setFollowers(followersData);
+      });
+    
+      const followingsRef = collection(db, "users", user.uid, "following");
+      const unsubscribeFollowings = onSnapshot(followingsRef, (snapshot) => {
+        const followingsData = snapshot.docs.map((doc) => doc.id);
+        setFollowings(followingsData);
+      });
+          // Temizlik fonksiyonu
+    return () => {
+      unsubscribeFollowers();
+      unsubscribeFollowings();
+    };
+    }
   }, [user]);
 
   const deleteUserAccount = async (userId: string) => {
@@ -88,11 +111,10 @@ export default function ProfileScreen() {
         await deleteUser(user);
       }
   
-      Alert.alert("Hesap Silindi", "Kullanıcı hesabı başarıyla silindi.");
+      Alert.alert(t("basarili"), t("hesapsilindi"));
       logout();
     } catch (error) {
-      console.error("Hesap silinirken hata:", error);
-      Alert.alert("Hata", "Hesap silinirken bir hata oluştu.");
+      Alert.alert(t("hata"), t("hesapsilhata"));
     }
   };
 
@@ -100,7 +122,7 @@ export default function ProfileScreen() {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
         <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
-        <Text style={{ textAlign: "center", marginTop: 20, color: theme.text }}>Giriş yapmalısınız!</Text>
+        <Text style={{ textAlign: "center", marginTop: 20, color: theme.text }}>{t("girisyapin")}</Text>
       </View>
     );
   }
@@ -131,57 +153,89 @@ export default function ProfileScreen() {
           }}
         >
           <Pressable onPress={() => router.push("../edit-profile")}>
-            <Text style={{ color: theme.text, paddingVertical: 5 }}>Profili Düzenle</Text>
+            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("profilduzenle")}</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push("../languageSettings")}>
+            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("dilsec")}</Text>
           </Pressable>
           <Pressable onPress={logout}>
-            <Text style={{ color: "red", paddingVertical: 5 }}>Çıkış Yap</Text>
+            <Text style={{ color: "red", paddingVertical: 5 }}>{t("cikisyap")}</Text>
           </Pressable>
           <Pressable
             onPress={() =>
               Alert.alert(
-                "Hesabı Sil",
-                "Hesabınızı kalıcı olarak silmek istediğinize emin misiniz?",
+                t("hesapsil"),
+                t("hesapsileminmisin"),
                 [
-                  { text: "İptal", style: "cancel" },
-                  { text: "Evet, Sil", onPress: () => deleteUserAccount(user.uid) },
+                  { text: t("iptal"), style: "cancel" },
+                  { text: t("evetsil"), onPress: () => deleteUserAccount(user.uid) },
                 ]
               )
             }
           >
-            <Text style={{ color: "red", paddingVertical: 5 }}>Hesabı Sil</Text>
+            <Text style={{ color: "red", paddingVertical: 5 }}>{t("hesapsil")}</Text>
           </Pressable>
         </View>
       )}
 
       {/* Profil Bilgileri */}
-      <View style={{ alignItems: "center", padding: 20 }}>
-        <Image
-          source={{ uri: profile?.photoURL || "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/profile_images%2Fno_profile_picture%2Ficone-x-avec-cercle-gris.png?alt=media&token=78a3007c-c98c-49b8-97cc-f8bf4f01098e" }}
-          style={{ width: 100, height: 100, borderRadius: 50 }}
-        />
-        <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>{profile?.username}</Text>
-        <Text style={{ color: theme.text }}>{profile?.bio || ""}</Text>
-      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", padding: 20 }}>
+        {/* Profil Fotoğrafı */}
+        <View style={{ position: "relative" }}>
+          <Image
+            source={{
+              uri:
+                profile?.photoURL ||
+                "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/profile_images%2Fno_profile_picture%2Ficone-x-avec-cercle-gris.png?alt=media&token=78a3007c-c98c-49b8-97cc-f8bf4f01098e",
+            }}
+            style={{ width: 100, height: 100, borderRadius: 30, marginRight: 10 }}
+          />
+        </View>
+
+        {/* Kullanıcı Bilgileri */}
+        <View style={{ flex: 1, marginLeft:20 }}>
+          <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>{profile?.username}</Text>
+
+          {/* Takipçi ve Takip Sayıları */}
+          <View style={{ flexDirection: "row", marginTop: 10 }}>
+            <TouchableOpacity
+              onPress={() => router.push(`/profile/follow/FollowersScreen?id=${user.uid}`)}
+              style={{ alignItems: "center", marginRight: 20 }}
+            >
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: "600" }}>{t("takipeden")}</Text>
+              <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>{followers.length}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity   
+              onPress={() => router.push(`/profile/follow/FollowingScreen?id=${user.uid}`)} 
+              style={{ alignItems: "center" }}
+            >
+              <Text style={{ color: theme.text, fontSize: 16, fontWeight: "600" }}>{t("takipedilen")}</Text>
+              <Text style={{ color: theme.text, fontSize: 20, fontWeight: "bold" }}>{followings.length}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+    </View>
+      <Text style={{ color: theme.text, marginLeft: 30, marginBottom: 10, fontSize:15 }}>{profile?.bio || ""}</Text>
 
       {/* Tema Değiştirme Toggle Switch */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-        <Text style={{ color: theme.text, marginRight: 10 }}>Aydınlık</Text>
+        <Text style={{ color: theme.text, marginRight: 10 }}>{t("aydınlık")}</Text>
         <Switch
           value={isDarkMode}
           onValueChange={toggleTheme}
           trackColor={{ false: "#ccc", true: "#444" }}
           thumbColor={isDarkMode ? "#fff" : "#000"}
         />
-        <Text style={{ color: theme.text, marginLeft: 10 }}>Karanlık</Text>
+        <Text style={{ color: theme.text, marginLeft: 10 }}>{t("karanlık")}</Text>
       </View>
 
       {/* Kullanıcının Kitapları */}
       <Text style={{ fontSize: 20, fontWeight: "bold", color: theme.text, marginHorizontal: 15, marginBottom: 10 }}>
-        Eklediğim Kitaplar
+        {t("kitaplarım")}
       </Text>
 
-      {loading && <Text style={{ textAlign: "center", color: theme.text }}>Yükleniyor...</Text>}
-      {error && <Text style={{ textAlign: "center", color: theme.text }}>Hata: {error}</Text>}
+      {loading && <Text style={{ textAlign: "center", color: theme.text }}>{t("yükleniyor")}</Text>}
+      {error && <Text style={{ textAlign: "center", color: theme.text }}>{t("hata")}: {error}</Text>}
 
       <FlatList
         data={books}

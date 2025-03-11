@@ -3,10 +3,12 @@ import { View, TextInput, Button, Alert, StatusBar, StyleSheet, TouchableOpacity
 import { useAuth } from "../hooks/useAuth";
 import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useTheme } from "@/hooks/useThemeContext"; 
+import { router } from "expo-router";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ChangePasswordScreen() {
   const { user, changePassword } = useAuth();
-
+  const { t } = useLanguage();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,17 +17,25 @@ export default function ChangePasswordScreen() {
 
   const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Hata", "Lütfen tüm alanları doldurun.");
+      Alert.alert(t("hata"), t("tumalanlaridoldur"));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Hata", "Yeni şifreler eşleşmiyor.");
+      Alert.alert(t("hata"), t("sifreeslesmiyor"));
       return;
     }
 
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])[A-Za-z\d\W_]{8,}$/.test(newPassword)) {
+      Alert.alert(
+        t("hata"),
+        t("sifrehatasi")
+      );
+      return;
+    }    
+
     if (!user || !user.email) {
-      Alert.alert("Hata", "Kullanıcı bilgileri eksik.");
+      Alert.alert(t("hata"), t("bilgieksik"));
       return;
     }
 
@@ -36,12 +46,13 @@ export default function ChangePasswordScreen() {
       const result = await changePassword(newPassword);
       
       if (result.success) {
-        Alert.alert("Başarılı", "Şifreniz başarıyla güncellendi.");
+        Alert.alert(t("basarili"), t("sifreguncel"));
+        router.back();
       } else {
-        Alert.alert("Hata", result.message);
+        Alert.alert(t("hata"), result.message);
       }
     } catch (error) {
-      Alert.alert("Hata", "Kimlik doğrulama başarısız. Lütfen mevcut şifrenizi doğru girdiğinizden emin olun.");
+      Alert.alert(t("hata"), t("kimlikhata"));
     }
     setLoading(false);
   };
@@ -54,7 +65,7 @@ export default function ChangePasswordScreen() {
         value={currentPassword}
         onChangeText={setCurrentPassword}
         placeholderTextColor={theme.inputPlaceholder}
-        placeholder="Mevcut şifre"
+        placeholder={t("mevcutsifre")}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
       <TextInput
@@ -62,7 +73,7 @@ export default function ChangePasswordScreen() {
         value={newPassword}
         onChangeText={setNewPassword}
         placeholderTextColor={theme.inputPlaceholder}
-        placeholder="Yeni şifre"
+        placeholder={t("yenisifre")}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
       <TextInput
@@ -70,11 +81,11 @@ export default function ChangePasswordScreen() {
         value={confirmPassword}
         onChangeText={setConfirmPassword}
         placeholderTextColor={theme.inputPlaceholder}
-        placeholder="Yeni şifre tekrar"
+        placeholder={t("yenisifretekrar")}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleChangePassword} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Güncelleniyor..." : "Şifreyi Değiştir"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("güncelleniyor") : t("sifredegis")}</Text>
       </TouchableOpacity>
     </View>
   );

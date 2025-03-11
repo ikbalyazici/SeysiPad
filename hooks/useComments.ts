@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../constants/firebaseConfig";
 import { Alert } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
 
 export type Comment = {
   id: string;
@@ -32,6 +33,7 @@ export type Comment = {
 export function useComments(chapterId: string) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!chapterId) return;
@@ -72,14 +74,14 @@ export function useComments(chapterId: string) {
             };
           });
         } catch (error) {
-          console.error("Kullanıcıları çekerken hata oluştu:", error);
+          console.error(t("kulcekhata"), error);
         }
       }
 
       // Kullanıcı bilgilerini yorumlara ekleyelim
       const commentsWithAuthors = rawComments.map((comment) => ({
         ...comment,
-        author: userMap[comment.authorUid] || { username: "Bilinmeyen", photoURL: null },
+        author: userMap[comment.authorUid] || { username: t("bilinmeyen"), photoURL: null },
       }));
 
       // Yorumları gruplama
@@ -164,7 +166,7 @@ export function useComments(chapterId: string) {
         }
       }
     } catch (error) {
-      console.error("Bildirim gönderilirken hata oluştu:", error);
+      console.error(t("bildirimgonderhata"), error);
     }
   };
 
@@ -172,18 +174,18 @@ export function useComments(chapterId: string) {
   // Yorum silme
   const deleteComment = async (commentId: string, authorUid: string, parentId: string | null = null) => {
     if (!auth.currentUser || auth.currentUser.uid !== authorUid) {
-      Alert.alert("Yetkisiz işlem", "Bu yorumu silme yetkiniz yok.");
+      Alert.alert(t("yetkisizislem"), t("yorumsilemen"));
       return;
     }
 
     const alertMessage = parentId
-      ? "Bu yanıtı silmek istediğinizden emin misiniz?"
-      : "Bu yorumu ve yanıtlarını silmek istediğinizden emin misiniz?";
+      ? t("yanıtsilcenmi")
+      : t("yorumsilcenmi");
 
-    Alert.alert("Silme Onayı", alertMessage, [
-      { text: "İptal", style: "cancel" },
+    Alert.alert(t("silonay"), alertMessage, [
+      { text: t("iptal"), style: "cancel" },
       {
-        text: "Sil",
+        text: t("sil"),
         onPress: async () => {
           try {
             // Yorumun kendisini sil
@@ -199,8 +201,8 @@ export function useComments(chapterId: string) {
 
             //Alert.alert("Başarılı", "Yorum silindi.");
           } catch (err) {
-            console.error("Yorum silinirken hata:", err);
-            Alert.alert("Hata", "Yorum silinirken bir hata oluştu.");
+            console.error(t("yshata"), err);
+            Alert.alert(t("hata"), t("yorumsilhata"));
           }
         },
       },

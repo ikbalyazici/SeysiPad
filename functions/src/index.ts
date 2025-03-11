@@ -1,7 +1,13 @@
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
+import {Timestamp} from "firebase-admin/firestore";
 
 admin.initializeApp();
+
+// Tetikleyicileri içe aktar
+import {updateReadCounts} from "./triggers/updateReadCounts";
+
+exports.updateReadCounts = updateReadCounts;
 
 export const deleteUnverifiedUsers = onSchedule("every 10 minutes", async () => {
   const now = Date.now();
@@ -36,26 +42,6 @@ export const deleteUnverifiedUsers = onSchedule("every 10 minutes", async () => 
           // Kullanıcının profil fotoğrafını Firebase Storage'dan sil
           await storage.deleteFiles({prefix: `profile_images/${uid}/`});
 
-          // 📌 Gelecekte eklenecek içerikleri de temizleme
-          // Kullanıcının yüklediği kitapları sil
-          // const booksSnapshot = await db.collection("books").where("ownerUid", "==", uid).get();
-          // for (const book of booksSnapshot.docs) {
-          //   await book.ref.delete();
-          //   await storage.deleteFiles({ prefix: `books/${book.id}/cover_page/` }); // Kapak fotoğrafı
-          // }
-
-          // Kullanıcının yazdığı bölümleri (chapters) sil
-          // const chaptersSnapshot = await db.collection("chapters").where("authorUid", "==", uid).get();
-          // for (const chapter of chaptersSnapshot.docs) {
-          //   await chapter.ref.delete();
-          // }
-
-          // Kullanıcının yaptığı yorumları sil
-          // const commentsSnapshot = await db.collection("comments").where("userUid", "==", uid).get();
-          // for (const comment of commentsSnapshot.docs) {
-          //   await comment.ref.delete();
-          // }
-
           console.log(`✅ Kullanıcı ${uid} ve tüm verileri temizlendi.`);
         } catch (userError) {
           console.error(`❌ Kullanıcı ${uid} verileri temizlenirken hata oluştu:`, userError);
@@ -70,5 +56,34 @@ export const deleteUnverifiedUsers = onSchedule("every 10 minutes", async () => 
     }
   } catch (error) {
     console.error("❌ Kullanıcıları silerken hata oluştu:", error);
+  }
+});
+
+export const deleteOldNotifications = onSchedule("every day 00:00", async () => {
+  const db = admin.firestore();
+  const now = Date.now();
+  const threeDaysAgo = Timestamp.fromMillis(now - 3 * 24 * 60 * 60 * 1000); // 3 gün önce
+
+  try {
+    const notificationsRef = db.collection("notifications");
+    const snapshot = await notificationsRef
+      .where("read", "==", true) // Boolean olduğundan emin ol
+      .where("createdAt", "<", threeDaysAgo) // Firestore Timestamp kullan
+      .get();
+
+    if (snapshot.empty) {
+      console.log("✅ Silinecek eski bildirim yok.");
+      return;
+    }
+
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    console.log(`🗑️ ${snapshot.size} eski bildirim başarıyla silindi.`);
+  } catch (error) {
+    console.error("❌ Eski bildirimleri silerken hata oluştu:", error);
   }
 });

@@ -1,9 +1,11 @@
 import { db } from "../constants/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { useLanguage } from "@/context/LanguageContext";
 
 export const addBook = async (userUid: string, title: string, description: string) => {
+    const { t } = useLanguage();
   if (!userUid || !title.trim()) {
-    return { success: false, message: "Geçersiz giriş." };
+    return { success: false, message: t("gecersizgiris") };
   }
 
   try {

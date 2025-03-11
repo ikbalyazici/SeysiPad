@@ -1,16 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useTheme } from "@/hooks/useThemeContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { useFont } from "@/context/FontContext"; // useFont ekledik
 
-interface FontSelectorProps {
-  selectedFont: string;
-  setSelectedFont: (font: string) => void;
-  fontSize: number;
-  setFontSize: (size: number) => void;
-}
-
-const FontSelector: React.FC<FontSelectorProps> = ({ selectedFont, setSelectedFont, fontSize, setFontSize }) => {
+const FontSelector: React.FC= () => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
+  const { selectedFont, setSelectedFont, fontSize, setFontSize } = useFont(); // useFont ile değerleri al
 
   const increaseFontSize = () => setFontSize(fontSize + 2);
   const decreaseFontSize = () => setFontSize(Math.max(fontSize - 2, 10));
@@ -57,7 +54,7 @@ const FontSelector: React.FC<FontSelectorProps> = ({ selectedFont, setSelectedFo
   return (
     <View style={styles.pickerContainer}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Text style={styles.label}>Font Seç:</Text>
+        <Text style={styles.label}>{t("fontsec")}</Text>
         <Picker selectedValue={selectedFont} onValueChange={setSelectedFont} style={styles.picker}>
         <Picker.Item label="Comic Neue" value="ComicNeue-Regular" />
         <Picker.Item label="Comic Neue Bold" value="ComicNeue-Bold" />

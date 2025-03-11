@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { View, TextInput, Button, Text, Alert, StatusBar, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "@/hooks/useThemeContext"; // Tema Hook'unu içe aktardık
+import { router } from "expo-router";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -9,6 +11,7 @@ export default function ForgotPasswordScreen() {
   const [message, setMessage] = useState("");
   const { resetPassword } = useAuth();
   const { theme } = useTheme(); // Mevcut temayı al
+  const { t } = useLanguage();
 
   const handleResetPassword = async () => {
     setLoading(true);
@@ -16,20 +19,21 @@ export default function ForgotPasswordScreen() {
     setLoading(false);
 
     if (response.success) {
-      setMessage("Şifre sıfırlama e-postası gönderildi.");
+      Alert.alert(t("basarili"), t("sifirlamapostasi"));
+      router.back();
     } else {
-      Alert.alert("Hata", response.message);
+      Alert.alert(t("hata"), response.message);
     }
   };
 
   return (
     <View style={{ flex: 1,padding: 20, backgroundColor: theme.background , justifyContent: "center"}}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{color: theme.text}}>Şifrenizi sıfırlamak için e-posta adresinizi girin:</Text>
+      <Text style={{color: theme.text}}>{t("sifresifirlamail")}</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="E-posta adresi"
+        placeholder={t("eposta")}
         autoCapitalize="none"
         placeholderTextColor={theme.inputPlaceholder}
         keyboardType="email-address"
@@ -38,7 +42,7 @@ export default function ForgotPasswordScreen() {
       />
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleResetPassword} disabled={loading}>
-        <Text style={styles.buttonText}>{"Şifreyi Sıfırla"}</Text>
+        <Text style={styles.buttonText}>{t("sifresifirla")}</Text>
       </TouchableOpacity>  
       {message ? <Text style={{ color: "green" }}>{message}</Text> : null}
     </View>

@@ -6,6 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { LogBox } from "react-native";
 import { FontProvider } from "./context/FontContext";
 import { useFonts } from "../hooks/useFonts";
+import LanguageProvider from "./context/LanguageContext";
 
 SplashScreen.preventAutoHideAsync();
 LogBox.ignoreLogs(["Text strings must be rendered within a <Text> component"]);
@@ -38,10 +39,12 @@ export default function Layout() {
   }
 
   return (
-    <FontProvider>
-      <ThemeProvider>
-        <Slot />
-      </ThemeProvider>
-    </FontProvider>
+    <LanguageProvider>
+      <FontProvider>
+        <ThemeProvider>
+          <Slot />
+        </ThemeProvider>
+      </FontProvider>
+    </LanguageProvider>
   );
 }

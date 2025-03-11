@@ -8,6 +8,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useUploadBookCover } from "../../hooks/useUploadBookCover";
 import { useTheme } from "@/hooks/useThemeContext"; 
 import { MaterialIcons } from "@expo/vector-icons";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function EditBookScreen() {
   const { id } = useLocalSearchParams(); // 📌 Kitap ID'sini al
@@ -20,11 +21,12 @@ export default function EditBookScreen() {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchBook = async () => {
       if (!id) {
-        setError("Kitap ID bulunamadı.");
+        setError(t("kitapidyok"));
         setLoading(false);
         return;
       }
@@ -39,11 +41,11 @@ export default function EditBookScreen() {
           setDescription(bookData.description);
           setCoverURL(bookData.coverURL || null);
         } else {
-          setError("Kitap bulunamadı.");
+          setError(t("kitapyok"));
         }
       } catch (err) {
-        console.error("Kitap yüklenirken hata oluştu:", err);
-        setError("Kitap yüklenirken hata oluştu.");
+        console.error(t("kitapyuklehata"), err);
+        setError(t("kitapyuklehata"));
       } finally {
         setLoading(false);
       }
@@ -54,16 +56,20 @@ export default function EditBookScreen() {
 
   const handleSave = async () => {
     if (!id || !user) return;
-    
+    if (!title)  { 
+      setError(t("baslikbosolamaz"));
+      return { 
+        success: false };
+    };
+
     try {
       setLoading(true);
       const bookRef = doc(db, "books", id as string);
       await updateDoc(bookRef, { title, description, coverURL });
 
-      router.push(`/book/${id}`);
+      router.back();
     } catch (err) {
-      console.error("Kitap güncellenirken hata oluştu:", err);
-      setError("Kitap güncellenirken hata oluştu.");
+      setError(t("kitapguncelhata"));
     } finally {
       setLoading(false);
     }
@@ -82,13 +88,13 @@ export default function EditBookScreen() {
       });
 
       if (result.canceled) {
-        Alert.alert("İşlem iptal edildi", "Resim seçilmedi.");
+        Alert.alert(t("islemiptal"), t("resimsecilmedi"));
         return;
       }
 
       const imageUri = result.assets?.[0]?.uri;
       if (!imageUri) {
-        Alert.alert("Hata", "Geçerli bir resim bulunamadı.");
+        Alert.alert(t("hata"), t("resimbulunamadi"));
         return;
       }
 
@@ -101,11 +107,11 @@ export default function EditBookScreen() {
         const bookRef = doc(db, "books", id as string);
         await updateDoc(bookRef, { coverURL: uploadResult.url });
       } else {
-        Alert.alert("Kapak yüklenemedi", uploadResult.message || "Bilinmeyen hata.");
+        Alert.alert(t("kapakyuklenemedi"), uploadResult.message || t("bilinmeyenhata"));
       }
     } catch (err) {
-      console.error("Kapak yüklenirken hata oluştu:", err);
-      setError("Kapak yüklenirken hata oluştu.");
+      console.error(t("kapakyuklehata"), err);
+      setError(t("kapakyuklehata"));
     }
   };
 
@@ -121,30 +127,30 @@ export default function EditBookScreen() {
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>Kitabı Düzenle</Text>
+      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>{t("kitapduzenle")}</Text>
       {error && <Text style={{ color: "red" }}>{error}</Text>}
 
-      <Text style={[styles.label, { color: theme.text }]}>Kitap Adı</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("kitapadi")}</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
-        placeholder="Kitap Adı"
+        placeholder={t("kitapadi")}
         placeholderTextColor={theme.inputPlaceholder}
         style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
-      <Text style={[styles.label, { color: theme.text }]}>Açıklama</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("aciklama")}</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
-        placeholder="Kitabınızı tanıtın"
+        placeholder={t("kitaptanit")}
         maxLength={1000}
         placeholderTextColor={theme.inputPlaceholder}
         multiline
         style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
 
-      <Text style={[styles.label, { color: theme.text }]}>Kapak Resmi</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{t("kapakresmi")}</Text>
       {coverURL ? (
         <Image source={{ uri: coverURL }} style={{ width: 150, height: 200, marginBottom: 10 }} />
       ) : (
@@ -153,11 +159,11 @@ export default function EditBookScreen() {
 
       <TouchableOpacity style={[styles.imageButton, { backgroundColor: theme.tint }]} onPress={handleUploadCover}>
         <MaterialIcons name="photo-library" size={20} color="white" />
-        <Text style={styles.buttonText}>Kapak Resmi Seç</Text>
+        <Text style={styles.buttonText}>{t("kapakresmisec")}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSave} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? "Kaydediliyor..." : "Kaydet"}</Text>
+        <Text style={styles.buttonText}>{loading ? t("kaydediliyor"): t("kaydet")}</Text>
       </TouchableOpacity>
     </View>
   );

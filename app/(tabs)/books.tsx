@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/constants/firebaseConfig";
+import { useLanguage } from "@/context/LanguageContext";
+
 
 export default function BooksScreen() {
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function BooksScreen() {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [authors, setAuthors] = useState<{ [key: string]: string }>({});
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchAuthors = async () => {
@@ -50,14 +53,14 @@ export default function BooksScreen() {
           color: theme.inputText,
           backgroundColor: theme.inputBackground,
         }}
-        placeholder="Kitap Ara..."
+        placeholder= {t("kitapara")}
         placeholderTextColor={theme.inputPlaceholder}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
 
       <Text style={{ fontSize: 24, fontWeight: "bold", marginVertical: 10, color: theme.text }}>
-        Kitaplar
+        {t("kitaplar")}
       </Text>
 
       {loading ? (
@@ -93,7 +96,7 @@ export default function BooksScreen() {
                   <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>{item.title}</Text>
                   <Pressable onPress={() => router.push(`/profile/${item.authorUid}`)}>
                     <Text style={{ fontSize: 12, color: theme.tint, marginTop: 4 }}>
-                      Yazar: {authors[item.authorUid] || "Yükleniyor..."}
+                      {t("yazar")} {authors[item.authorUid] || t("yükleniyor")}
                     </Text>
                   </Pressable>
                   <Text style={{ fontSize: 13, color: theme.text }} numberOfLines={2}>
