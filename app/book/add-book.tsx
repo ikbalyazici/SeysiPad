@@ -49,10 +49,10 @@ export default function AddBookScreen() {
     setLoading(true);
 
     try {
-      const result = await addBook(user.uid, title, description);
+      const result = await addBook(user.uid, title, description,0,0);
 
       if (!result.success) {
-        throw new Error(result.message);
+        throw new Error(t("gecersizgiris")); // Burada çeviri desteği kullan
       }
 
       let coverURL = null;

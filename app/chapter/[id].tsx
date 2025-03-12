@@ -320,7 +320,7 @@ export default function ChapterDetailScreen() {
                 </View>
               </TouchableOpacity>
 
-              <LikeButton contentId={`chapter_${id}`} />   // Bölüm beğenisi
+              <LikeButton contentId={`chapter_${id}`} bookId={chapter.bookId}/>   // Bölüm beğenisi
             </View>
 
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 20 }}>

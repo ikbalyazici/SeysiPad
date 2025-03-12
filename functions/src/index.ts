@@ -1,6 +1,5 @@
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
-import {Timestamp} from "firebase-admin/firestore";
 
 admin.initializeApp();
 
@@ -62,13 +61,13 @@ export const deleteUnverifiedUsers = onSchedule("every 10 minutes", async () => 
 export const deleteOldNotifications = onSchedule("every day 00:00", async () => {
   const db = admin.firestore();
   const now = Date.now();
-  const threeDaysAgo = Timestamp.fromMillis(now - 3 * 24 * 60 * 60 * 1000); // 3 gün önce
+  const threeDaysAgo = now - 3 * 24 * 60 * 60 * 1000; // 3 gün önce
 
   try {
     const notificationsRef = db.collection("notifications");
     const snapshot = await notificationsRef
-      .where("read", "==", true) // Boolean olduğundan emin ol
-      .where("createdAt", "<", threeDaysAgo) // Firestore Timestamp kullan
+      .where("read", "==", true)
+      .where("createdAt", "<", new Date(threeDaysAgo))
       .get();
 
     if (snapshot.empty) {

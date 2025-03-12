@@ -30,6 +30,8 @@ export default function BookDetailScreen() {
     title: string;
     description: string;
     coverURL: string;
+    totalReads: number;
+    totalLikes: number;
   };
 
   // Chapters sıralaması
@@ -184,16 +186,24 @@ export default function BookDetailScreen() {
       
       <Text style={{ fontSize: 24, fontWeight: "bold", color:theme.text }}>{book.title}</Text>
 
-      <Pressable onPress={() => router.push(`/profile/${book.authorUid}`)}>
-        <Text style={{ color: theme.tint, marginTop: 4 }}>
-          {t("yazar")} {authorUsername || t("yükleniyor")}
-        </Text>
-      </Pressable>
+      <View style={{flexDirection:"row", justifyContent:"space-between"}}>
+        <Pressable onPress={() => router.push(`/profile/${book.authorUid}`)}>
+          <Text style={{ color: theme.tint, marginTop: 4 }}>
+            {t("yazar")} {authorUsername || t("yükleniyor")}
+          </Text>
+        </Pressable>
+        <View style={{flexDirection:"row"}}> 
+          <FontAwesome name="heart" size={22} color="red" style={{marginRight:10}}/>
+          <Text style={{color:theme.text, marginRight:15 ,fontSize: 16}}>{book.totalLikes}</Text>
+          <FontAwesome name="eye" size={22} color={theme.text} style={{marginRight:10}}/>
+          <Text style={{color:theme.text, marginRight:10 ,fontSize: 16}}>{book.totalReads}</Text>
+        </View>
+      </View>
 
       {book?.coverURL ? (
-        <Image source={{ uri: book.coverURL }} style={{ width: 205, height: 288, marginBottom: 10, alignSelf: "center", marginTop: 5 }} />
+        <Image source={{ uri: book.coverURL }} style={{ width: 205, height: 288, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
       ) : (
-        <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 300, height: 400, marginBottom: 10, alignSelf: "center", marginTop: 5 }} />
+        <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 300, height: 400, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
       )}
 
       <Text style={{ fontSize: 16, marginBottom: 20, color: theme.text }}>{book?.description}</Text>

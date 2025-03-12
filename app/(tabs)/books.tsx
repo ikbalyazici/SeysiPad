@@ -8,13 +8,14 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/constants/firebaseConfig";
 import { useLanguage } from "@/context/LanguageContext";
 
-
 export default function BooksScreen() {
   const router = useRouter();
   const { books, loading } = useFetchBooks(false);
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [authors, setAuthors] = useState<{ [key: string]: string }>({});
+  const [sortOption, setSortOption] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export default function BooksScreen() {
       const usersData: { [key: string]: string } = {};
 
       usersSnapshot.forEach((doc) => {
-        usersData[doc.id] = doc.data().username; // Kullanıcı ID'si ile eşleştir
+        usersData[doc.id] = doc.data().username;
       });
 
       setAuthors(usersData);
@@ -33,14 +34,21 @@ export default function BooksScreen() {
     fetchAuthors();
   }, []);
 
-  const filteredBooks = books.filter((book) =>
+  const sortedBooks = [...books].filter((book) =>
     book.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (sortOption === "likesAsc") sortedBooks.sort((a, b) => a.totalLikes - b.totalLikes);
+  else if (sortOption === "likesDesc") sortedBooks.sort((a, b) => b.totalLikes - a.totalLikes);
+  else if (sortOption === "readsAsc") sortedBooks.sort((a, b) => a.totalReads - b.totalReads);
+  else if (sortOption === "readsDesc") sortedBooks.sort((a, b) => b.totalReads - a.totalReads);
+  else if (sortOption === "newest") sortedBooks.sort((a, b) => b.createdAt - a.createdAt);
+  else if (sortOption === "oldest") sortedBooks.sort((a, b) => a.createdAt - b.createdAt);
 
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: theme.background, paddingBottom: 60 }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
-
+      
       {/* Arama Çubuğu */}
       <TextInput
         style={{
@@ -53,62 +61,67 @@ export default function BooksScreen() {
           color: theme.inputText,
           backgroundColor: theme.inputBackground,
         }}
-        placeholder= {t("kitapara")}
+        placeholder={t("kitapara")}
         placeholderTextColor={theme.inputPlaceholder}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
-
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginVertical: 10, color: theme.text }}>
-        {t("kitaplar")}
-      </Text>
-
+      
+      {/* Başlık ve Sıralama */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>{t("kitaplar")}</Text>
+        <Pressable onPress={() => setMenuVisible(!menuVisible)}>
+          <Text style={{ fontSize: 16, color: theme.tint, marginRight:5 }}>{t("sırala")}</Text>
+        </Pressable>
+      </View>
+      
+      {/* Sıralama Menüsü */}
+      {menuVisible && (
+        <View style={{
+          position: "absolute",
+          top: 60,
+          right: 20,
+          backgroundColor: theme.modalbg,
+          padding: 10,
+          borderRadius: 5,
+          zIndex: 10,
+          elevation: 5,
+        }}>
+          {["likesAsc", "likesDesc", "readsAsc", "readsDesc", "newest", "oldest"].map((option) => (
+            <Pressable key={option} onPress={() => { setSortOption(option); setMenuVisible(false); }}>
+              <Text style={{ color: theme.text, padding: 5 }}>{t(option)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      
+      {/* Kitap Listesi */}
       {loading ? (
         <ActivityIndicator size="large" color="blue" />
       ) : (
         <FlatList
-          data={filteredBooks}
+          data={sortedBooks}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 80 }} // Tab barın altında içerik kaybolmasın
+          contentContainerStyle={{ paddingBottom: 80 }}
           renderItem={({ item }) => (
             <Pressable onPress={() => router.push(`../book/${item.id}`)}>
-              <View
-                style={{
-                  flexDirection: "row", // Yatay hizalama
-                  alignItems: "center",
-                  padding: 15,
-                  borderBottomWidth: 1,
-                  borderColor: theme.tint,
-                }}
-              >
-                {/* Kitap Kapağı */}
+              <View style={{ flexDirection: "row", alignItems: "center", padding: 15, borderBottomWidth: 1, borderColor: theme.tint }}>
                 <Image
-                  source={{
-                    uri: item?.coverURL
-                      ? item.coverURL
-                      : "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900",
-                  }}
-                  style={{ width: 75, height: 100, marginRight: 10, borderRadius:10 }} // Yan yana görünmesi için `marginRight` ekledik
+                  source={{ uri: item.coverURL || "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }}
+                  style={{ width: 75, height: 100, marginRight: 10, borderRadius: 10 }}
                 />
-
-                {/* Kitap Bilgileri */}
-                <View style={{ flex: 1 }}> 
+                <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>{item.title}</Text>
                   <Pressable onPress={() => router.push(`/profile/${item.authorUid}`)}>
-                    <Text style={{ fontSize: 12, color: theme.tint, marginTop: 4 }}>
-                      {t("yazar")} {authors[item.authorUid] || t("yükleniyor")}
-                    </Text>
+                    <Text style={{ fontSize: 12, color: theme.tint, marginTop: 4 }}>{t("yazar")} {authors[item.authorUid] || t("yükleniyor")}</Text>
                   </Pressable>
-                  <Text style={{ fontSize: 13, color: theme.text }} numberOfLines={2}>
-                    {item.description}
-                  </Text>
+                  <Text style={{ fontSize: 13, color: theme.text }} numberOfLines={2}>{item.description}</Text>
                 </View>
               </View>
             </Pressable>
           )}
         />
       )}
-
       {/* FAB - Yeni Kitap Ekle */}
       <Pressable
         onPress={() => router.push("../book/add-book")}
