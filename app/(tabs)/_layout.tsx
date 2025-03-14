@@ -10,7 +10,7 @@ import { useLanguage } from "@/context/LanguageContext";
 export default function TabLayout() {
   const { unreadCount } = useNotifications();
   const { theme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
 
   return (
     <Tabs
