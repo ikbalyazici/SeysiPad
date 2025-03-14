@@ -5,6 +5,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useAddChapter } from "../../hooks/useAddChapter";
 import { useTheme } from "@/hooks/useThemeContext"; 
 import { useLanguage } from "@/context/LanguageContext";
+import { addDoc, collection, getDocs } from "firebase/firestore";
+import { db } from "@/constants/firebaseConfig";
 
 export default function AddChapterScreen() {
   const { bookId } = useLocalSearchParams(); 
@@ -19,6 +21,20 @@ export default function AddChapterScreen() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
+  const sendNotification = async (recipientUid: string, senderUid: string, chapterId: string, text: string) => {
+    if (!recipientUid || recipientUid === senderUid) return; 
+
+    await addDoc(collection(db, "notifications"), {
+      recipientUid,
+      senderUid,
+      type: "chapter",
+      chapterId,
+      createdAt: new Date(),
+      read: false,
+      text,
+    });
+  };
+
   const handleAddChapter = async () => {
     if (!bookId || !user) return;
     setLoading(true);
@@ -27,11 +43,19 @@ export default function AddChapterScreen() {
     const result = await addChapter(bookId as string, title, content);
     
     if (result.success) {
+      const followersRef = collection(db, "users", user.uid as string, "followers");
+      const querySnapshot = await getDocs(followersRef);
+
+      const followersData = await Promise.all(
+        querySnapshot.docs.map(async (docSnapshot) => {
+          const followerId = docSnapshot.id;
+          await sendNotification(followerId, user.uid, result.chapterId as string, title);
+        })
+      );
       router.back(); // Bölüm eklenince kitaba geri dön
     } else {
       setError(result.message);
     }
-
     setLoading(false);
   };
 

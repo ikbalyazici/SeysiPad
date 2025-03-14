@@ -134,6 +134,7 @@ export function useComments(chapterId: string) {
     // 📌 **Bildirimi kaydet**
     try {
       let recipientUid: string | null = null;
+      let recipientReplyUid: string | null = null;
       let bookId: string | null = null;
   
       // 🔥 Bölümün bağlı olduğu kitabın sahibini al (Ana yorumsa)
@@ -152,17 +153,21 @@ export function useComments(chapterId: string) {
       else {
         const parentCommentDoc = await getDoc(doc(db, "comments", parentId));
         if (parentCommentDoc.exists()) {
-          recipientUid = parentCommentDoc.data().authorUid;
+          recipientReplyUid = parentCommentDoc.data().authorUid;
         }
   
         // **Yanıtın kitabını öğrenmek için ana yorumun bölümünü al**
-        if (recipientUid) {
+        if (recipientReplyUid) {
           const chapterDoc = await getDoc(doc(db, "chapters", chapterId));
           if (chapterDoc.exists()) {
+            recipientUid = chapterDoc.data().authorUid;
             bookId = chapterDoc.data().bookId;
           }
   
-          await sendNotification(recipientUid, senderUid, "reply", text, chapterId, bookId!, false, commentId);
+          await sendNotification(recipientReplyUid, senderUid, "reply", text, chapterId, bookId!, false, commentId);
+          if (recipientUid) {
+            await sendNotification(recipientUid, senderUid, "new_comment", text, chapterId, bookId!, false, commentId);
+          }
         }
       }
     } catch (error) {

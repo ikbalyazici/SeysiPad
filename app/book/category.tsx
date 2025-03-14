@@ -1,57 +1,58 @@
-import { View, Text, FlatList, ActivityIndicator, Pressable, Image, StatusBar, TextInput, TouchableOpacity, ScrollView, TouchableWithoutFeedback  } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, FlatList, ActivityIndicator, Pressable, Image, StatusBar, TextInput, TouchableWithoutFeedback } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFetchBooks } from "../../hooks/useFetchBooks";
 import { useTheme } from "@/hooks/useThemeContext";
 import { useEffect, useState } from "react";
-import { AntDesign } from "@expo/vector-icons";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/constants/firebaseConfig";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function BooksScreen() {
   const router = useRouter();
-  const { books, loading } = useFetchBooks(false);
+  const { category } = useLocalSearchParams(); // Get category from URL
+
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [authors, setAuthors] = useState<{ [key: string]: string }>({});
   const [sortOption, setSortOption] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const { t } = useLanguage();
-  // 📌 Kategoriler
-  const categoriesList = [
-    "Aksiyon", 
-    "Macera", 
-    "Fantezi", 
-    "BilimKurgu", 
-    "Romantizm",
-    "GenelKurgu", 
-    "Korku", 
-    "Gizem", 
-    "Gerilim", 
-    "Doğaüstü",
-    "Mizah", 
-    "Tarihi", 
-    "GençKurgu", 
-    "Şiir"
-  ];
-
-  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
-    const fetchAuthors = async () => {
-      const usersCollection = collection(db, "users");
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersData: { [key: string]: string } = {};
+    const fetchBooksByCategory = async () => {
+      const booksCollection = collection(db, 'books');
+      const booksQuery = query(booksCollection, where('selectedCategories', 'array-contains', category));
+      const booksSnapshot = await getDocs(booksQuery);
 
-      usersSnapshot.forEach((doc) => {
-        usersData[doc.id] = doc.data().username;
-      });
+      const booksList = booksSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-      setAuthors(usersData);
+      setBooks(booksList);
+      setLoading(false);
     };
 
-    fetchAuthors();
-  }, []);
+    if (category) {
+      fetchBooksByCategory();
+    }
+
+    const fetchAuthors = async () => {
+        const usersCollection = collection(db, "users");
+        const usersSnapshot = await getDocs(usersCollection);
+        const usersData: { [key: string]: string } = {};
+  
+        usersSnapshot.forEach((doc) => {
+          usersData[doc.id] = doc.data().username;
+        });
+  
+        setAuthors(usersData);
+      };
+  
+      fetchAuthors();
+  }, [category]);
 
   const sortedBooks = [...books].filter((book) =>
     book.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -89,7 +90,7 @@ export default function BooksScreen() {
         
         {/* Başlık ve Sıralama */}
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>{t("kitaplar")}</Text>
+          <Text style={{ fontSize: 24, fontWeight: "bold", color: theme.text }}>{t(category as string)} {t("kitaplari")}</Text>
           <Pressable onPress={() => setMenuVisible(!menuVisible)}>
             <Text style={{ fontSize: 16, color: theme.tint, marginRight:5 }}>{t("sırala")}</Text>
           </Pressable>
@@ -114,37 +115,6 @@ export default function BooksScreen() {
             ))}
           </View>
         )}
-
-        {/* 📌 Kategori Seçimi */}
-              <TouchableOpacity
-                style={{ backgroundColor: theme.tint, padding: 12, borderRadius: 10, alignItems: "center", marginBottom: 10, }}
-                onPress={() => setShowDropdown(!showDropdown)}
-              >
-                <Text style={{ color: "white", fontWeight: "bold" }}>
-                  {t("kategorisec")}
-                </Text>
-              </TouchableOpacity>
-        
-              {showDropdown && (
-                <ScrollView style={{maxHeight: 200, borderRadius: 10, borderWidth: 1, paddingVertical: 5, borderColor: theme.tint,backgroundColor: theme.modalbg}}>
-                  {categoriesList.map((category) => (
-                    <TouchableOpacity
-                      key={category}
-                      style={{
-                        padding: 10,
-                        alignItems: "center",
-                        borderColor: theme.tint,
-                        borderBottomWidth: 1,
-                      }}
-                      onPress={() => router.push(`/book/category?category=${category}`)}
-                    >
-                      <Text style={{ color: theme.text}}>
-                        {t(category)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
         
         {/* Kitap Listesi */}
         {loading ? (
@@ -173,27 +143,6 @@ export default function BooksScreen() {
             )}
           />
         )}
-        {/* FAB - Yeni Kitap Ekle */}
-        <Pressable
-          onPress={() => router.push("../book/add-book")}
-          style={{
-            position: "absolute",
-            bottom: 60,
-            right: 20,
-            backgroundColor: theme.tint,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            justifyContent: "center",
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOpacity: 0.2,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 5,
-          }}
-        >
-          <AntDesign name="plus" size={28} color="white" />
-        </Pressable>
       </View>
     </TouchableWithoutFeedback>
   );

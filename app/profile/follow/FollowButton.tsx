@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { auth, db } from "../../../constants/firebaseConfig";
-import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, getDoc, addDoc, collection } from "firebase/firestore";
 import { useTheme } from "@/hooks/useThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { FontAwesome } from "@expo/vector-icons";
@@ -31,6 +31,18 @@ const FollowButton: React.FC<FollowButtonProps> = ({ profileUserId }) => {
 
     checkFollowingStatus();
   }, [currentUser, profileUserId]);
+
+  const sendNotification = async (recipientUid: string, senderUid: string) => {
+    if (!recipientUid || recipientUid === senderUid) return; 
+
+    await addDoc(collection(db, "notifications"), {
+      recipientUid,
+      senderUid,
+      type: "follow",
+      createdAt: new Date(),
+      read: false,
+    });
+  };
 
   const handleFollowToggle = async () => {
     if (!currentUser) return;
@@ -66,6 +78,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({ profileUserId }) => {
     } else {
       await setDoc(followingRef, { followedAt: new Date() });
       await setDoc(followerRef, { followedAt: new Date() });
+      await sendNotification(profileUserId, currentUser.uid);
       setIsFollowing(true);
     }
   };

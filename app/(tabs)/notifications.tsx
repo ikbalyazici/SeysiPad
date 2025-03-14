@@ -10,7 +10,7 @@ import { useLanguage } from "@/context/LanguageContext";
 type Notification = {
   id: string;
   senderUid: string;
-  type: "reply" | "new_comment";
+  type: "reply" | "new_comment" | "follow";
   text: string;
   chapterId: string;
   bookId: string;
@@ -167,8 +167,18 @@ export default function NotificationsScreen() {
                       pathname: `../chapter/${item.chapterId}`,
                       params: { commentId: item.commentId }, // Yorumun ID’sini gönderiyoruz
                     });
-                  } else {
-                    router.push(`../chapter/${item.chapterId}`);
+                  } 
+                  else if(item.type === "follow"){
+                    router.push(`../profile/${item.senderUid}`)
+                  }
+                  else if(item.type === "book"){
+                    router.push(`../book/${item.bookId}`)
+                  }
+                  else if(item.type === "chapter"){
+                    router.push(`../chapter/${item.chapterId}`)
+                  }
+                  else {
+                    console.error("Bildirim hatası");
                   }
 
                   // State içinde bildirimi okunmuş olarak güncelle
@@ -200,7 +210,14 @@ export default function NotificationsScreen() {
                   </Text>
                   {item.type === "new_comment"
                     ? `${t("yorumbildirim")} "${item.text}"`
-                    : `${t("yanıtbildirim")} "${item.text}"`}
+                    : item.type === "reply"
+                    ? `${t("yanıtbildirim")} "${item.text}"`
+                    : item.type === "follow"
+                    ? `${t("takipbildirim")}`
+                    : item.type === "book"
+                    ? `${t("kitapbildirim")}${item.text}`
+                    : `${t("bolumbildirim")}${item.text}`}
+
                 </Text>
               </View>
             </Pressable>

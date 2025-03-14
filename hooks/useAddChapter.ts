@@ -19,7 +19,7 @@ export function useAddChapter() {
     setError(null);
 
     try {
-      await addDoc(collection(db, "chapters"), {
+      const docRef = await addDoc(collection(db, "chapters"), {
         bookId, // Kitap ile bağlantıyı sağlıyoruz
         authorUid: user.uid,
         title,
@@ -27,7 +27,7 @@ export function useAddChapter() {
         createdAt: serverTimestamp(),
       });
 
-      return { success: true };
+      return { success: true, chapterId: docRef.id };
     } catch (err: any) {
       setError(err.message);
       return { success: false, message: err.message };

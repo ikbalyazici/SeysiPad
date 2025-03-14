@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, FlatList, Pressable, Button, Alert, Image, StatusBar, TouchableOpacity } from "react-native";
+import { View, Text, ActivityIndicator, FlatList, Pressable, Alert, Image, StatusBar, TouchableOpacity, TouchableWithoutFeedback } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { db } from "../../constants/firebaseConfig";
 import { collection, deleteDoc, doc, getDoc, getDocs, query, where } from "firebase/firestore";
@@ -32,6 +32,7 @@ export default function BookDetailScreen() {
     coverURL: string;
     totalReads: number;
     totalLikes: number;
+    selectedCategories: [];
   };
 
   // Chapters sıralaması
@@ -148,100 +149,122 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: theme.background }}>
-      <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      {user?.uid === book.authorUid && (
-        <TouchableOpacity
-          onPress={() => setMenuVisible(!menuVisible)}
-          style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
-        >
-          <MaterialIcons name="more-vert" size={24} color={theme.text} />
-        </TouchableOpacity>
-      )}
+    <TouchableWithoutFeedback onPress={() => setMenuVisible(false)} accessible={false}>
+      <View style={{ flex: 1, padding: 16, backgroundColor: theme.background }}>
+        <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
+        {user?.uid === book.authorUid && (
+          <TouchableOpacity
+            onPress={() => setMenuVisible(!menuVisible)}
+            style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
+          >
+            <MaterialIcons name="more-vert" size={24} color={theme.text} />
+          </TouchableOpacity>
+        )}
 
-      {menuVisible && (
-        <View
-          style={{
-            position: "absolute",
-            top: 40,
-            right: 10,
-            backgroundColor: theme.modalbg,
-            padding: 10,
-            borderRadius: 5,
-            elevation: 5,
-            zIndex: 10,
-          }}
-        >
-          <Pressable onPress={() => router.push(`/book/edit-book?id=${id}`)}>
-            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("kitapduzenle")}</Text>
-          </Pressable>
-          <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
-            <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("bolumekle")}</Text>
-          </Pressable>
-          <Pressable onPress={handleDelete}>
-            <Text style={{ color: "red", paddingVertical: 5 }}>{t("kitabısil")}</Text>
-          </Pressable>
-        </View>
-      )}
-      
-      <Text style={{ fontSize: 24, fontWeight: "bold", color:theme.text }}>{book.title}</Text>
-
-      <View style={{flexDirection:"row", justifyContent:"space-between"}}>
-        <Pressable onPress={() => router.push(`/profile/${book.authorUid}`)}>
-          <Text style={{ color: theme.tint, marginTop: 4 }}>
-            {t("yazar")} {authorUsername || t("yükleniyor")}
-          </Text>
-        </Pressable>
-        <View style={{flexDirection:"row"}}> 
-          <FontAwesome name="heart" size={22} color="red" style={{marginRight:10}}/>
-          <Text style={{color:theme.text, marginRight:15 ,fontSize: 16}}>{book.totalLikes}</Text>
-          <FontAwesome name="eye" size={22} color={theme.text} style={{marginRight:10}}/>
-          <Text style={{color:theme.text, marginRight:10 ,fontSize: 16}}>{book.totalReads}</Text>
-        </View>
-      </View>
-
-      {book?.coverURL ? (
-        <Image source={{ uri: book.coverURL }} style={{ width: 205, height: 288, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
-      ) : (
-        <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 300, height: 400, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
-      )}
-
-      <Text style={{ fontSize: 16, marginBottom: 20, color: theme.text }}>{book?.description}</Text>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-        <Text style={{ color: theme.text }}>{t("bolumler")}</Text>
-
-        {/* Sıralama yönünü değiştiren ikon */}
-        <TouchableOpacity onPress={() => setSortAscending(!sortAscending)}>
-          <MaterialIcons name={sortAscending ? "arrow-circle-up" : "arrow-circle-down"} size={30} color={theme.text} />
-        </TouchableOpacity>
-      </View>
-
-
-      {user?.uid === book.authorUid && (
-        <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
-        <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.tint }}>
-          <FontAwesome name="plus-circle" size={24} color= {theme.text} />
-          <Text style={{color:theme.text, marginLeft:10, fontWeight:"bold", fontSize:15, fontFamily:"Comic-Neue"}}>{t("yenibolumekle")}</Text>
-        </View>
-      </Pressable>
-      )}
-
-      {loading ? (
-        <ActivityIndicator size="small" />
-      ) : (
-        <FlatList
-          data={sortedChapters}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => router.push(`/chapter/${item.id}`)}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.tint }}>
-                <Text style={{color:theme.text}}>{item.title}</Text>
-                <FontAwesome name="check-circle" size={24} color={readStatuses[item.id] === "true" ? "green" : "red"} />
-              </View>
+        {menuVisible && (
+          <View
+            style={{
+              position: "absolute",
+              top: 40,
+              right: 10,
+              backgroundColor: theme.modalbg,
+              padding: 10,
+              borderRadius: 5,
+              elevation: 5,
+              zIndex: 10,
+            }}
+          >
+            <Pressable onPress={() => router.push(`/book/edit-book?id=${id}`)}>
+              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("kitapduzenle")}</Text>
             </Pressable>
-          )}
-        />
-      )}
-    </View>
+            <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
+              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("bolumekle")}</Text>
+            </Pressable>
+            <Pressable onPress={handleDelete}>
+              <Text style={{ color: "red", paddingVertical: 5 }}>{t("kitabısil")}</Text>
+            </Pressable>
+          </View>
+        )}
+        
+        <Text style={{ fontSize: 24, fontWeight: "bold", color:theme.text }}>{book.title}</Text>
+
+        <View style={{flexDirection:"row", justifyContent:"space-between"}}>
+          <Pressable onPress={() => router.push(`/profile/${book.authorUid}`)}>
+            <Text style={{ color: theme.tint, marginTop: 4 }}>
+              {t("yazar")} {authorUsername || t("yükleniyor")}
+            </Text>
+          </Pressable>
+          <View style={{flexDirection:"row"}}> 
+            <FontAwesome name="heart" size={22} color="red" style={{marginRight:10}}/>
+            <Text style={{color:theme.text, marginRight:15 ,fontSize: 16}}>{book.totalLikes}</Text>
+            <FontAwesome name="eye" size={22} color={theme.text} style={{marginRight:10}}/>
+            <Text style={{color:theme.text, marginRight:10 ,fontSize: 16}}>{book.totalReads}</Text>
+          </View>
+        </View>
+
+        {book?.coverURL ? (
+          <Image source={{ uri: book.coverURL }} style={{ width: 205, height: 288, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
+        ) : (
+          <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 300, height: 400, marginBottom: 10, alignSelf: "center", marginTop: 5, borderRadius:15 }} />
+        )}
+
+        <Text style={{ fontSize: 16, marginBottom: 20, color: theme.text }}>{book?.description}</Text>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 5 }}>
+          {book.selectedCategories?.map((category, index) => (
+            <Pressable 
+              key={index} 
+              onPress={() => router.push(`/book/category?category=${category}`)}
+              style={{
+                backgroundColor: theme.tint, 
+                paddingVertical: 6,
+                paddingHorizontal: 12, 
+                borderRadius: 15, 
+                marginRight: 10, 
+                marginBottom: 5,
+              }}
+            >
+              <Text style={{ color:"white", fontSize: 14, fontWeight: "bold" }}>{t(category)}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+          <Text style={{ color: theme.text }}>{t("bolumler")}</Text>
+
+          {/* Sıralama yönünü değiştiren ikon */}
+          <TouchableOpacity onPress={() => setSortAscending(!sortAscending)}>
+            <MaterialIcons name={sortAscending ? "arrow-circle-up" : "arrow-circle-down"} size={30} color={theme.text} />
+          </TouchableOpacity>
+        </View>
+
+
+        {user?.uid === book.authorUid && (
+          <Pressable onPress={() => router.push({ pathname: "/book/add-chapter", params: { bookId: id } })}>
+          <View style={{ flexDirection: "row", justifyContent: "flex-start", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.tint }}>
+            <FontAwesome name="plus-circle" size={24} color= {theme.text} />
+            <Text style={{color:theme.text, marginLeft:10, fontWeight:"bold", fontSize:15, fontFamily:"Comic-Neue"}}>{t("yenibolumekle")}</Text>
+          </View>
+        </Pressable>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="small" />
+        ) : (
+          <FlatList
+            data={sortedChapters}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable onPress={() => router.push(`/chapter/${item.id}`)}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderColor: theme.tint }}>
+                  <Text style={{color:theme.text}}>{item.title}</Text>
+                  <FontAwesome name="check-circle" size={24} color={readStatuses[item.id] === "true" ? "green" : "red"} />
+                </View>
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }

@@ -1,7 +1,8 @@
 import { db } from "../constants/firebaseConfig";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-export const addBook = async (userUid: string, title: string, description: string, totalLikes: number, totalReads: number) => {
+export const addBook = async (userUid: string, title: string, description: string, 
+                              totalLikes: number, totalReads: number, selectedCategories: string[]) => {
   if (!userUid || !title.trim()) {
     return { success: false, message: "Geçersiz giriş" }; // Sabit string kullan
   }
@@ -14,6 +15,7 @@ export const addBook = async (userUid: string, title: string, description: strin
       description,
       totalLikes,
       totalReads,
+      selectedCategories,
     });
 
     return { success: true, bookId: docRef.id };

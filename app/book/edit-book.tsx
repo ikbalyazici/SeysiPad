@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, Text, TextInput, Button, ActivityIndicator, Image, Alert, StatusBar, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, Button, ActivityIndicator, Image, Alert, StatusBar, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../../constants/firebaseConfig";
@@ -23,6 +23,28 @@ export default function EditBookScreen() {
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
 
+  // 📌 Kategoriler
+  const categoriesList = [
+    "Aksiyon", 
+    "Macera", 
+    "Fantezi", 
+    "BilimKurgu", 
+    "Romantizm",
+    "GenelKurgu", 
+    "Korku", 
+    "Gizem", 
+    "Gerilim", 
+    "Doğaüstü",
+    "Mizah", 
+    "Tarihi", 
+    "GençKurgu", 
+    "Şiir",
+    "Hikaye"
+  ];
+  
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false); // Dropdown aç/kapat
+
   useEffect(() => {
     const fetchBook = async () => {
       if (!id) {
@@ -40,6 +62,10 @@ export default function EditBookScreen() {
           setTitle(bookData.title);
           setDescription(bookData.description);
           setCoverURL(bookData.coverURL || null);
+          // 📌 Seçili Kategorileri Yükle
+          if (bookData.selectedCategories && Array.isArray(bookData.selectedCategories)) {
+            setSelectedCategories(bookData.selectedCategories);
+          }
         } else {
           setError(t("kitapyok"));
         }
@@ -54,6 +80,21 @@ export default function EditBookScreen() {
     fetchBook();
   }, [id]);
 
+  // 📌 Kategori Seçimini Güncelle
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else if (prev.length < 3) {
+        return [...prev, category];
+      } else {
+        Alert.alert(t("hata"), t("enfazla3kategori"));
+        return prev;
+      }
+    });
+  };
+
+
   const handleSave = async () => {
     if (!id || !user) return;
     if (!title)  { 
@@ -65,7 +106,12 @@ export default function EditBookScreen() {
     try {
       setLoading(true);
       const bookRef = doc(db, "books", id as string);
-      await updateDoc(bookRef, { title, description, coverURL });
+      await updateDoc(bookRef, { 
+        title, 
+        description, 
+        coverURL, 
+        selectedCategories: selectedCategories // 📌 Kategorileri Firestore'a kaydet
+      });
 
       router.back();
     } catch (err) {
@@ -124,6 +170,88 @@ export default function EditBookScreen() {
     );
   }
 
+  const styles = StyleSheet.create({
+    dropdownButton: {
+      padding: 12,
+      borderRadius: 10,
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    dropdownMenu: {
+      maxHeight: 200,
+      borderRadius: 10,
+      borderWidth: 1,
+      paddingVertical: 5,
+      borderColor: theme.tint,
+      backgroundColor: theme.modalbg
+    },
+    categoryOption: {
+      padding: 10,
+      alignItems: "center",
+      borderColor: theme.tint,
+      borderBottomWidth: 1,
+    },
+    categorySelected: {
+      backgroundColor: "#4CAF50",
+    },
+    container: {
+      flex: 1,
+      padding: 20,
+      justifyContent: "center",
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: "bold",
+      marginBottom: 10,
+    },
+    input: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 10,
+      marginBottom: 15,
+    },
+    textarea: {
+      borderWidth: 1,
+      borderRadius: 12,
+      padding: 10,
+      textAlignVertical:"top",
+      height: 90, // Sabit 5 satır için yükseklik
+      marginBottom: 15,
+    },
+    placeholderText: {
+      textAlign: "center",
+      marginBottom: 10,
+    },
+    coverImage: {
+      width: 150,
+      height: 200,
+      alignSelf: "center",
+      marginBottom: 10,
+    },
+    imageButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 12,
+      borderRadius: 10,
+      marginBottom: 20,
+    },
+    submitButton: {
+      position: "absolute",
+      bottom: 30, // Sayfanın altına yakın ama tam dipte değil
+      alignSelf: "center",
+      width: "90%",
+      padding: 14,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+    buttonText: {
+      color: "white",
+      fontWeight: "bold",
+      marginLeft: 8,
+    },
+  });
+
   return (
     <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
@@ -144,11 +272,41 @@ export default function EditBookScreen() {
         value={description}
         onChangeText={setDescription}
         placeholder={t("kitaptanit")}
-        maxLength={1000}
+        maxLength={750}
         placeholderTextColor={theme.inputPlaceholder}
         multiline
         style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
       />
+
+      {/*📌 Kategori Seçimi */}
+      <Text style={[styles.label, { color: theme.text }]}>{t("kategorisec")}</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, { backgroundColor: theme.tint }]}
+        onPress={() => setShowDropdown(!showDropdown)}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          {t("kategorisec")}
+        </Text>
+      </TouchableOpacity>
+
+      {showDropdown && (
+        <ScrollView style={styles.dropdownMenu}>
+          {categoriesList.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryOption,
+                selectedCategories.includes(category) && styles.categorySelected,
+              ]}
+              onPress={() => toggleCategory(category)}
+            >
+              <Text style={{ color: selectedCategories.includes(category) ? "white" : theme.text }}>
+                {t(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}  
 
       <Text style={[styles.label, { color: theme.text }]}>{t("kapakresmi")}</Text>
       {coverURL ? (
@@ -169,61 +327,3 @@ export default function EditBookScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 15,
-  },
-  textarea: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 10,
-    textAlignVertical:"top",
-    height: 150, // Sabit 5 satır için yükseklik
-    marginBottom: 15,
-  },
-  placeholderText: {
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  coverImage: {
-    width: 150,
-    height: 200,
-    alignSelf: "center",
-    marginBottom: 10,
-  },
-  imageButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  submitButton: {
-    position: "absolute",
-    bottom: 30, // Sayfanın altına yakın ama tam dipte değil
-    alignSelf: "center",
-    width: "90%",
-    padding: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
-});
