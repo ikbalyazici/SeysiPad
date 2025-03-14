@@ -194,12 +194,13 @@ export default function NotificationsScreen() {
               style={[styles.notification, !item.read && styles.unreadNotification]}
             >
 
-              {item.sender.photoURL && (
-                <Image
-                  source={{ uri: item.sender.photoURL }}
-                  style={styles.profileImage}
-                />
-              )}
+              <Image
+                source={{ uri: item.sender.photoURL ||
+                  "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/profile_images%2Fno_profile_picture%2Ficone-x-avec-cercle-gris.png?alt=media&token=78a3007c-c98c-49b8-97cc-f8bf4f01098e",
+                }}
+                style={styles.profileImage}
+              />
+
               <View style={{ flex: 1 }}>
                 <Text style={{color: theme.text}}>
                   <Text 
