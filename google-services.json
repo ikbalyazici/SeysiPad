@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "585626519839-aga0aeek1ic4kdi0a4mi8ahktj4ou42i.apps.googleusercontent.com",
+          "client_id": "585626519839-huh6vfpdps75on38sg1ptkj69f60ivo9.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.sezeyee.seysipad",
-            "certificate_hash": "730264923173e3f9ab70273151c2da8248140dc1"
+            "certificate_hash": "2f4b597260f71e4bd94959fd902caf934f49385c"
           }
         },
         {
@@ -28,7 +28,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAfjXknRoUIdZullD4VVIiSU-TjRv46iXA"
+          "current_key": "AIzaSyAMrPohtdoo0Qj6o-fZvoiDtwquW2foLJQ"
         }
       ],
       "services": {
@@ -37,6 +37,13 @@
             {
               "client_id": "585626519839-9svc6er2qnvn7548t6vjocm03ap2cjc3.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "585626519839-lgdea0jcqf0lqe6dea2o1i8teorlcub4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sezeyee.seysipad"
+              }
             }
           ]
         }

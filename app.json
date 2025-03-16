@@ -4,11 +4,16 @@
     "slug": "seysipad",
     "version": "2.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/5.jpeg",
+    "icon": "./assets/images/5.png",
     "splash": {
-      "image": "./assets/5.jpeg",
+      "image": "./assets/5.png",
       "resizeMode": "contain",
       "backgroundColor": "#335cb5"
+    },
+    "notification": {
+      "icon": "./assets/5.png",
+      "color": "#ffffff",
+      "iosDisplayInForeground": true
     },
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
@@ -27,9 +32,11 @@
     "android": {
       "package": "com.sezeyee.seysipad",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/5.jpeg",
+        "foregroundImage": "./assets/images/5.png",
         "backgroundColor": "#ffffff"
       },
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
@@ -40,14 +47,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/5.jpeg"
+      "favicon": "./assets/images/5.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/5.jpeg",
+          "image": "./assets/images/5.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

@@ -32,6 +32,7 @@ export default function Layout() {
         // 🔹 Kullanıcı giriş yaptıysa bildirim izni al ve Firestore'a token kaydet
         registerForPushNotifications().then((token) => {
           if (token) {
+            console.log("📌 Expo Push Token:", token);
             saveTokenToFirestore(user.uid, token);
             saveNotificationPreferences(user.uid); // 🔹 Bildirim tercihlerini kaydet
           }

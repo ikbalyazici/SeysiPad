@@ -5,13 +5,22 @@ import Constants from "expo-constants";
 
 // 📌 Kullanıcıdan bildirim izni al ve FCM token'ı döndür
 export async function registerForPushNotifications() {
+  console.log("🚀 registerForPushNotifications() çağrıldı!"); // EKLEDİK
   // Expo istemcisinde değilsek token alınmaz
-  if (!Constants.isDevice) {
+  console.log("Constants:", Constants);
+  console.log("🚀 registerForPushNotifications() çağrıldı!");
+  console.log("Constants.isDevice:", Constants.isDevice);
+  const isRealDevice = typeof Constants.isDevice === "boolean"
+    ? Constants.isDevice
+    : (Platform.OS === "android" || Platform.OS === "ios");
+
+  if (!isRealDevice) {
     console.log("📵 Push bildirimleri yalnızca gerçek cihazda çalışır.");
     return null;
   }
 
   let { status } = await Notifications.getPermissionsAsync();
+  console.log("🔍 Bildirim izni durumu:", status);
   if (status !== "granted") {
     const { status: newStatus } = await Notifications.requestPermissionsAsync();
     if (newStatus !== "granted") {
@@ -22,10 +31,11 @@ export async function registerForPushNotifications() {
 
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    console.log("📌 Expo Project ID:", projectId); // ✅ Test için ekledik
     const token = (
       await Notifications.getExpoPushTokenAsync({ projectId })
     ).data;
-    
+    console.log("📌 Expo Push Token:", token); // ✅ Test için ekledik
     if (!token) {
       console.log("❌ Token alınamadı.");
       return null;
