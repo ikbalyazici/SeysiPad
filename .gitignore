@@ -28,6 +28,12 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+#secret
+# .gitignore dosyasına ekleyin
+seysi-224ce-firebase-adminsdk-fbsvc-52ce4d89fa.json
+firebaseConfig.ts
+
+
 # macOS
 .DS_Store
 *.pem
