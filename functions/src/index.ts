@@ -1,5 +1,7 @@
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
+import {onDocumentCreated} from "firebase-functions/v2/firestore";
+import Expo from "expo-server-sdk"; // ✅ Hata burada düzeltiliyor!
 
 admin.initializeApp();
 
@@ -86,3 +88,63 @@ export const deleteOldNotifications = onSchedule("every day 00:00", async () => 
     console.error("❌ Eski bildirimleri silerken hata oluştu:", error);
   }
 });
+
+// 📌 Firestore'daki `notifications` koleksiyonuna yeni bir bildirim eklendiğinde çalışır.
+export const sendPushNotification = onDocumentCreated(
+  "notifications/{notificationId}",
+  async (event) => {
+    const db = admin.firestore();
+    const expo = new Expo(); // ✅ Doğru kullanım
+    const snapshot = event.data;
+    if (!snapshot) return;
+
+    const notificationData = snapshot.data();
+    const recipientId: string = notificationData.recipientId; // Bildirim alacak kullanıcı
+    const type: string = notificationData.type; // Örn: "comment", "reply", "follow", "book", "chapter"
+
+    console.log(`📢 Yeni bildirim: ${type} -> Kullanıcı: ${recipientId}`);
+
+    // 📌 Kullanıcının Firestore'daki bildirim tercihlerini al
+    const preferencesSnap = await db.collection("notification_preferences").doc(recipientId).get();
+    const preferences = preferencesSnap.exists ? preferencesSnap.data() : {};
+
+    // 📌 Kullanıcı bu bildirim türünü kapattıysa işlemi iptal et
+    const isEnabled = preferences?.[type] ?? true; // Varsayılan: açık (true)
+    if (!isEnabled) {
+      console.log(`🚫 Kullanıcı ${recipientId}, '${type}' bildirimlerini kapattı.`);
+      return;
+    }
+
+    // 📌 Kullanıcının Firestore'daki Expo Push Token'ını al
+    const userSnap = await db.collection("users").doc(recipientId).get();
+    if (!userSnap.exists) {
+      console.log(`❌ Kullanıcı ${recipientId} bulunamadı.`);
+      return;
+    }
+
+    const userData = userSnap.data();
+    const pushToken: string | undefined = userData?.fcmToken;
+
+    if (!pushToken || !Expo.isExpoPushToken(pushToken)) {
+      console.log(`❌ Kullanıcının Expo push token'ı geçersiz veya eksik: ${pushToken}`);
+      return;
+    }
+
+    // 📌 Bildirim mesajını hazırla
+    const message = {
+      to: pushToken,
+      sound: "default",
+      title: notificationData.title || "Seysipad",
+      body: notificationData.body || "Yeni bir bildirim aldınız.",
+      data: {type, ...notificationData},
+    };
+
+    try {
+      // 📌 Expo Sunucusuna Bildirim Gönder
+      const response = await expo.sendPushNotificationsAsync([message]);
+      console.log("📨 Bildirim gönderildi:", response);
+    } catch (error) {
+      console.error("❌ Bildirim gönderme hatası:", error);
+    }
+  }
+);

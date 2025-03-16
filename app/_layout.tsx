@@ -7,6 +7,7 @@ import { LogBox } from "react-native";
 import { FontProvider } from "./context/FontContext";
 import { useFonts } from "../hooks/useFonts";
 import LanguageProvider from "./context/LanguageContext";
+import { registerForPushNotifications, saveTokenToFirestore, saveNotificationPreferences } from "@/src/utils/notifications";
 
 SplashScreen.preventAutoHideAsync();
 LogBox.ignoreLogs(["Text strings must be rendered within a <Text> component"]);
@@ -27,6 +28,14 @@ export default function Layout() {
     if (appReady) {
       if (user) {
         router.replace("/(tabs)");
+
+        // 🔹 Kullanıcı giriş yaptıysa bildirim izni al ve Firestore'a token kaydet
+        registerForPushNotifications().then((token) => {
+          if (token) {
+            saveTokenToFirestore(user.uid, token);
+            saveNotificationPreferences(user.uid); // 🔹 Bildirim tercihlerini kaydet
+          }
+        });
       } else {
         router.replace("/login");
       }
