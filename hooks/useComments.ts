@@ -146,7 +146,7 @@ export function useComments(chapterId: string) {
         }
   
         if (recipientUid) {
-          await sendNotification(recipientUid, senderUid, "new_comment", text, chapterId, bookId!, false, commentId);
+          await sendNotification(recipientUid, senderUid, "new_comment", t("yorumbildirim")+ " " +text, chapterId, bookId!, false, commentId);
         }
       } 
       // 🔥 Yanıt ekleniyorsa (Yanıt verilen kişinin UID'sini al)
@@ -164,9 +164,9 @@ export function useComments(chapterId: string) {
             bookId = chapterDoc.data().bookId;
           }
   
-          await sendNotification(recipientReplyUid, senderUid, "reply", text, chapterId, bookId!, false, commentId);
+          await sendNotification(recipientReplyUid, senderUid, "reply", t("yanıtbildirim")+ " " + text, chapterId, bookId!, false, commentId);
           if (recipientUid) {
-            await sendNotification(recipientUid, senderUid, "new_comment", text, chapterId, bookId!, false, commentId);
+            await sendNotification(recipientUid, senderUid, "new_comment", t("yorumbildirim")+ " " + text, chapterId, bookId!, false, commentId);
           }
         }
       }

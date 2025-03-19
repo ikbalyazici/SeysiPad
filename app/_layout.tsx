@@ -1,3 +1,4 @@
+import "../constants/firebaseConfig"; // Firebase'i ilk başta import et
 import { useEffect, useState } from "react";
 import { Slot, useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +33,6 @@ export default function Layout() {
         // 🔹 Kullanıcı giriş yaptıysa bildirim izni al ve Firestore'a token kaydet
         registerForPushNotifications().then((token) => {
           if (token) {
-            console.log("📌 Expo Push Token:", token);
             saveTokenToFirestore(user.uid, token);
             saveNotificationPreferences(user.uid); // 🔹 Bildirim tercihlerini kaydet
           }

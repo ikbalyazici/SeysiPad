@@ -49,7 +49,7 @@ export default function AddChapterScreen() {
       const followersData = await Promise.all(
         querySnapshot.docs.map(async (docSnapshot) => {
           const followerId = docSnapshot.id;
-          await sendNotification(followerId, user.uid, result.chapterId as string, title);
+          await sendNotification(followerId, user.uid, result.chapterId as string, t("bolumbildirim")+ " " +title);
         })
       );
       router.back(); // Bölüm eklenince kitaba geri dön

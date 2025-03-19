@@ -65,7 +65,15 @@
           "cameraPermission": "Allow"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/5.jpeg",
+          "color": "#ffffff",
+          "mode": "production"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

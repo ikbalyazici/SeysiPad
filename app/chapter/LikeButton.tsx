@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { db, auth } from "../../constants/firebaseConfig";
-import { doc, setDoc, deleteDoc, collection, query, where, getDocs, getDoc, onSnapshot, updateDoc, increment, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, collection, query, where, getDocs, getDoc, onSnapshot, updateDoc, increment, serverTimestamp, addDoc } from "firebase/firestore";
 import { FontAwesome } from "@expo/vector-icons"; // 👍 Beğeni ikonu için
 import { useTheme } from "@/hooks/useThemeContext";
+import { useLanguage } from "../context/LanguageContext";
 
-const LikeButton = ({ contentId, bookId }: { contentId: string; bookId?: string }) => {
+const LikeButton = ({ contentId, bookId, chapterId, title, authorId }: { contentId: string; bookId?: string; chapterId?: string; title?: string; authorId?: string}) => {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const userId = auth.currentUser?.uid;
   const { theme } = useTheme();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!userId) return;
@@ -26,6 +28,20 @@ const LikeButton = ({ contentId, bookId }: { contentId: string; bookId?: string 
 
     return () => unsubscribe();
   }, [userId, contentId]);
+
+  const sendNotification = async (recipientUid: string, senderUid: string, chapterId: string, text: string) => {
+    if (!recipientUid || recipientUid === senderUid) return; 
+
+    await addDoc(collection(db, "notifications"), {
+      recipientUid,
+      senderUid,
+      type: "like",
+      chapterId,
+      createdAt: new Date(),
+      read: false,
+      text,
+    });
+  };
 
   const toggleLike = async () => {
     if (!auth.currentUser?.uid) return;
@@ -59,6 +75,7 @@ const LikeButton = ({ contentId, bookId }: { contentId: string; bookId?: string 
     } else {
       // Beğeniyi ekle
       await setDoc(likeRef, { contentId, userId, bookId: bookId || null, createdAt: serverTimestamp() });
+      await sendNotification(authorId as string, userId, chapterId as string, t("begenibildirim")+ " " +title);
 
       const chapterDoc = await getDoc(chapterRef);
       if (chapterDoc.exists()) {

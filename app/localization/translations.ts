@@ -194,6 +194,16 @@ export const translations: Record<string, Record<string, string>> = {
         takipbildirim: " followed you",
         kitapbildirim: " added a new book: ",
         bolumbildirim: " added a new chapter: ",
+        bildirim_ayarları: "Notification Settings",
+        new_comment: "New Comment Notifications",
+        reply: "New Reply Notifications",
+        follow: "New Follower Notifications",
+        book: "New Book Notifications",
+        chapter: "New Chapter Notifications",
+        begenibildirim: " liked your chapter: ",
+        geribildirim: "Send Feedback",
+        konu: "Topic",
+        mesaj: "Message"
     },
     tr: {
         hosgeldin: "Hoşgeldiniz!",
@@ -390,6 +400,16 @@ export const translations: Record<string, Record<string, string>> = {
         takipbildirim: " seni takip etti",
         kitapbildirim: " yeni bir kitap ekledi: ",
         bolumbildirim: " yeni bir bölüm ekledi: ",
+        bildirim_ayarları: "Bildirim Ayarları",
+        new_comment: "Yeni Yorum Bildirimleri",
+        reply: "Yeni Yanıt Bildirimleri",
+        follow: "Yeni Takipçi Bildirimleri",
+        book: "Yeni Kitap Bildirimleri",
+        chapter: "Yeni Bölüm Bildirimleri",
+        begenibildirim: " bölümünü beğendi: ",
+        geribildirim: "Geribildirim Gönder",
+        konu: "Konu",
+        mesaj: "Mesaj"
     },
     de: {
         hosgeldin: "Willkommen!",
@@ -586,6 +606,16 @@ export const translations: Record<string, Record<string, string>> = {
         takipbildirim: " dir gefolgt",
         kitapbildirim: " ein neues Buch hinzugefügt: ",
         bolumbildirim: " ein neues Kapitel hinzugefügt: ",
+        bildirim_ayarları: "Einstellungen für Benachrichtigungen",
+        new_comment: "Benachrichtigungen über neue Kommentare",
+        reply: "Neue Antwortbenachrichtigungen",
+        follow: "Benachrichtigungen für neue Follower",
+        book: "Benachrichtigungen über neue Bücher",
+        chapter: "Benachrichtigungen über neue Kapitel",
+        begenibildirim: " Ihr Kapitel hat mir gefallen: ",
+        geribildirim: "Feedback senden",
+        konu: "Thema",
+        mesaj: "Nachricht"
     },
   };
   

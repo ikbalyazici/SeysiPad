@@ -19,6 +19,8 @@ buildscript {
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+        // Firebase için Google Services Gradle Plugin
+        classpath('com.google.gms:google-services:4.4.0')
     }
 }
 

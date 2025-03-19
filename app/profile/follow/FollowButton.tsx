@@ -32,7 +32,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({ profileUserId }) => {
     checkFollowingStatus();
   }, [currentUser, profileUserId]);
 
-  const sendNotification = async (recipientUid: string, senderUid: string) => {
+  const sendNotification = async (recipientUid: string, senderUid: string, text: string) => {
     if (!recipientUid || recipientUid === senderUid) return; 
 
     await addDoc(collection(db, "notifications"), {
@@ -41,6 +41,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({ profileUserId }) => {
       type: "follow",
       createdAt: new Date(),
       read: false,
+      text
     });
   };
 
@@ -78,7 +79,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({ profileUserId }) => {
     } else {
       await setDoc(followingRef, { followedAt: new Date() });
       await setDoc(followerRef, { followedAt: new Date() });
-      await sendNotification(profileUserId, currentUser.uid);
+      await sendNotification(profileUserId, currentUser.uid, t("takipbildirim"));
       setIsFollowing(true);
     }
   };

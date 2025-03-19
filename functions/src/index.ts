@@ -99,7 +99,7 @@ export const sendPushNotification = onDocumentCreated(
     if (!snapshot) return;
 
     const notificationData = snapshot.data();
-    const recipientId: string = notificationData.recipientId; // Bildirim alacak kullanıcı
+    const recipientId: string = notificationData.recipientUid; // Bildirim alacak kullanıcı
     const type: string = notificationData.type; // Örn: "comment", "reply", "follow", "book", "chapter"
 
     console.log(`📢 Yeni bildirim: ${type} -> Kullanıcı: ${recipientId}`);
@@ -117,6 +117,7 @@ export const sendPushNotification = onDocumentCreated(
 
     // 📌 Kullanıcının Firestore'daki Expo Push Token'ını al
     const userSnap = await db.collection("users").doc(recipientId).get();
+    const senderName = (await db.collection("users").doc(notificationData.senderUid).get()).data()?.username;
     if (!userSnap.exists) {
       console.log(`❌ Kullanıcı ${recipientId} bulunamadı.`);
       return;
@@ -130,12 +131,11 @@ export const sendPushNotification = onDocumentCreated(
       return;
     }
 
-    // 📌 Bildirim mesajını hazırla
     const message = {
       to: pushToken,
       sound: "default",
-      title: notificationData.title || "Seysipad",
-      body: notificationData.body || "Yeni bir bildirim aldınız.",
+      title: notificationData.title || "HEYY!",
+      body: senderName + notificationData.text, // 🔥 Bildirim mesajı formatlandı
       data: {type, ...notificationData},
     };
 

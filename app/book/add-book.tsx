@@ -133,7 +133,7 @@ export default function AddBookScreen() {
       const followersData = await Promise.all(
         querySnapshot.docs.map(async (docSnapshot) => {
           const followerId = docSnapshot.id;
-          await sendNotification(followerId, user.uid, result.bookId as string, title);
+          await sendNotification(followerId, user.uid, result.bookId as string, t("kitapbildirim")+ " " +title);
         })
       );
 

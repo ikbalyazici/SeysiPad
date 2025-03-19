@@ -77,15 +77,22 @@ export default function ProfileScreen() {
       for (const commentDoc of commentsSnapshot.docs) {
         await updateDoc(doc(db, "comments", commentDoc.id), { authorUid: null });
       }
-
+  
       // 📌 4️⃣ Kullanıcının okuma ilerlemelerini (user_chapter_progress) sil
-      const progressQuery = query(collection(db, "user_chapter_progress"), where("userUid", "==", userId));
+      const progressQuery = query(collection(db, "user_chapter_progress"), where("userId", "==", userId));
       const progressSnapshot = await getDocs(progressQuery);
       for (const progressDoc of progressSnapshot.docs) {
         await deleteDoc(doc(db, "user_chapter_progress", progressDoc.id));
       }
-
-       // 📌 5️⃣ Kullanıcının profil fotoğraflarını sil
+  
+      // 📌 5️⃣ Kullanıcının beğenilerini sil
+      const likesQuery = query(collection(db, "likes"), where("userId", "==", userId));
+      const likesSnapshot = await getDocs(likesQuery);
+      for (const likesDoc of likesSnapshot.docs) {
+        await deleteDoc(doc(db, "likes", likesDoc.id));
+      }
+  
+      // 📌 6️⃣ Kullanıcının profil fotoğraflarını sil
       const storage = getStorage();
       const profileImagesRef = ref(storage, `profile_images/${userId}/`);
       
@@ -94,18 +101,50 @@ export default function ProfileScreen() {
       for (const fileRef of files.items) {
         await deleteObject(fileRef);
       }
-
-      //Kullanıcının usernameini sil
+  
+      // 📌 7️⃣ Kullanıcı adını (username) sil
       const usernamesQuery = query(collection(db, "usernames"), where("uid", "==", userId));
       const usernamesSnapshot = await getDocs(usernamesQuery);
       for (const usernamesDoc of usernamesSnapshot.docs) {
         await deleteDoc(doc(db, "usernames", usernamesDoc.id));
       }
+  
+      // 📌 8️⃣ Kullanıcının bildirim tercihlerine ait dökümanı sil
+      const notificationPreferencesRef = doc(db, "notification_preferences", userId);
+      await deleteDoc(notificationPreferencesRef);
+  
+      // 📌 9️⃣ Kullanıcının takipçileri ve takip ettikleri listelerinden sil
+      // Kullanıcının takipçilerini (followers) ve takip ettiklerini (following) sil
+      const followersQuery = query(collection(db, "followers"), where("followerUid", "==", userId));
+      const followersSnapshot = await getDocs(followersQuery);
+      for (const followerDoc of followersSnapshot.docs) {
+        await deleteDoc(doc(db, "followers", followerDoc.id));  // Burada null yerine silme işlemi yapılır
+      }
 
-      // 📌 5️⃣ Firestore’daki kullanıcı profilini sil
+      const followingQuery = query(collection(db, "following"), where("followingUid", "==", userId));
+      const followingSnapshot = await getDocs(followingQuery);
+      for (const followingDoc of followingSnapshot.docs) {
+        await deleteDoc(doc(db, "following", followingDoc.id));  // Burada null yerine silme işlemi yapılır
+      }
+
+      // Kullanıcının takip ettiği kişilerden ve onu takip edenlerden de sil
+      const followingUserQuery = query(collection(db, "followers"), where("followerUid", "==", userId));
+      const followingUserSnapshot = await getDocs(followingUserQuery);
+      for (const doc of followingUserSnapshot.docs) {
+        await deleteDoc(doc.ref);  // Burada da kullanıcıyı silme işlemi yapılır
+      }
+
+      const followersUserQuery = query(collection(db, "following"), where("followingUid", "==", userId));
+      const followersUserSnapshot = await getDocs(followersUserQuery);
+      for (const doc of followersUserSnapshot.docs) {
+        await deleteDoc(doc.ref);  // Burada da kullanıcıyı silme işlemi yapılır
+      }
+
+  
+      // 📌 🔟 Firestore’daki kullanıcı profilini sil
       await deleteDoc(doc(db, "users", userId));
   
-      // 📌 4️⃣ Firebase Authentication’dan kullanıcıyı sil
+      // 📌 11️⃣ Firebase Authentication’dan kullanıcıyı sil
       const user = auth.currentUser;
       if (user && user.uid === userId) {
         await deleteUser(user);
@@ -159,10 +198,16 @@ export default function ProfileScreen() {
             <Pressable onPress={() => router.push("../languageSettings")}>
               <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("dilsec")}</Text>
             </Pressable>
+            <Pressable onPress={() => router.push("../notificationSettings")}>
+              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("bildirim_ayarları")}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push("../feedbackScreen")}>
+              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("geribildirim")}</Text>
+            </Pressable>
             <Pressable onPress={logout}>
               <Text style={{ color: "red", paddingVertical: 5 }}>{t("cikisyap")}</Text>
             </Pressable>
-            <Pressable
+            {/* <Pressable
               onPress={() =>
                 Alert.alert(
                   t("hesapsil"),
@@ -175,7 +220,7 @@ export default function ProfileScreen() {
               }
             >
               <Text style={{ color: "red", paddingVertical: 5 }}>{t("hesapsil")}</Text>
-            </Pressable>
+            </Pressable> */}
           </View>
         )}
 

@@ -10,7 +10,7 @@ import { useLanguage } from "@/context/LanguageContext";
 type Notification = {
   id: string;
   senderUid: string;
-  type: "reply" | "new_comment" | "follow";
+  type: "reply" | "new_comment" | "follow" | "book" | "chapter"|"like";
   text: string;
   chapterId: string;
   bookId: string;
@@ -177,6 +177,9 @@ export default function NotificationsScreen() {
                   else if(item.type === "chapter"){
                     router.push(`../chapter/${item.chapterId}`)
                   }
+                  else if(item.type === "like"){
+                    router.push(`../chapter/${item.chapterId}`)
+                  }
                   else {
                     console.error("Bildirim hatası");
                   }
@@ -209,15 +212,7 @@ export default function NotificationsScreen() {
                   >
                     {item.sender.username}
                   </Text>
-                  {item.type === "new_comment"
-                    ? `${t("yorumbildirim")} "${item.text}"`
-                    : item.type === "reply"
-                    ? `${t("yanıtbildirim")} "${item.text}"`
-                    : item.type === "follow"
-                    ? `${t("takipbildirim")}`
-                    : item.type === "book"
-                    ? `${t("kitapbildirim")}${item.text}`
-                    : `${t("bolumbildirim")}${item.text}`}
+                  {item.text}
 
                 </Text>
               </View>
