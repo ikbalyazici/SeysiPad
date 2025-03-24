@@ -78,6 +78,7 @@ export async function saveNotificationPreferences(userId: string) {
     follow: true,
     book: true,
     chapter: true,
+    like: true
   };
 
   try {
