@@ -69,7 +69,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/5.jpeg",
+          "icon": "./assets/images/5.png",
           "color": "#ffffff",
           "mode": "production"
         }

@@ -41,9 +41,32 @@ export default function EditBookScreen() {
     "Şiir",
     "Hikaye"
   ];
+
+  const agesList = [
+    "GenelOkuyucu",
+    "13-14",
+    "15-16",
+    "17-18",
+    "19-20",
+    "21+",
+  ];
+  
+  const contentsList = [
+    "GenelOkuyucu",
+    "Şiddet",
+    "KorkuGerilim",
+    "KüfürArgo",
+    "Cinselİçerik",
+    "UyuşturucuAlkol",
+    "AğırPsikolojikTemalar",
+  ];
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAgeBounds, setSelectedAgeBounds] = useState<string[]>([]);
+  const [selectedContents, setSelectedContents] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false); // Dropdown aç/kapat
+  const [showDropdownAge, setShowDropdownAge] = useState(false); // Dropdown aç/kapat
+  const [showDropdownContent, setShowDropdownContent] = useState(false); // Dropdown aç/kapat
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -65,6 +88,12 @@ export default function EditBookScreen() {
           // 📌 Seçili Kategorileri Yükle
           if (bookData.selectedCategories && Array.isArray(bookData.selectedCategories)) {
             setSelectedCategories(bookData.selectedCategories);
+          }
+          if (bookData.selectedAgeBounds && Array.isArray(bookData.selectedAgeBounds)) {
+            setSelectedAgeBounds(bookData.selectedAgeBounds);
+          }
+          if (bookData.selectedContents && Array.isArray(bookData.selectedContents)) {
+            setSelectedContents(bookData.selectedContents);
           }
         } else {
           setError(t("kitapyok"));
@@ -94,6 +123,30 @@ export default function EditBookScreen() {
     });
   };
 
+   // 📌 Yaş Sınırları Seçimini Güncelle
+  const toggleAgeBounds = (category: string) => {
+    setSelectedAgeBounds((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else if (prev.length < 3) {
+        return [...prev, category];
+      } else {
+        Alert.alert(t("hata"), t("enfazla3yas"));
+        return prev;
+      }
+    });
+  };
+
+    // 📌 İçerik Sınırları Seçimini Güncelle
+    const toggleContent = (category: string) => {
+    setSelectedContents((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category); // Seçilmişse kaldır
+      } else {
+        return [...prev, category]; // Yeni seçim ekle
+      }
+    });
+  };    
 
   const handleSave = async () => {
     if (!id || !user) return;
@@ -103,6 +156,21 @@ export default function EditBookScreen() {
         success: false };
     };
 
+    if (selectedCategories.length === 0) {
+      Alert.alert(t("hata"), t("enkatkategorigerekli"));
+      return;
+    }
+
+    if (selectedAgeBounds.length === 0) {
+      Alert.alert(t("hata"), t("enkatyasgerekli"));
+      return;
+    }
+
+    if (selectedContents.length === 0) {
+      Alert.alert(t("hata"), t("enkaticerikgerekli"));
+      return;
+    }
+
     try {
       setLoading(true);
       const bookRef = doc(db, "books", id as string);
@@ -110,7 +178,9 @@ export default function EditBookScreen() {
         title, 
         description, 
         coverURL, 
-        selectedCategories: selectedCategories // 📌 Kategorileri Firestore'a kaydet
+        selectedCategories: selectedCategories, // 📌 Kategorileri Firestore'a kaydet
+        selectedAgeBounds: selectedAgeBounds,
+        selectedContents: selectedContents
       });
 
       router.back();
@@ -178,7 +248,7 @@ export default function EditBookScreen() {
       marginBottom: 10,
     },
     dropdownMenu: {
-      maxHeight: 200,
+      //maxHeight: 200,
       borderRadius: 10,
       borderWidth: 1,
       paddingVertical: 5,
@@ -203,6 +273,7 @@ export default function EditBookScreen() {
       fontSize: 16,
       fontWeight: "bold",
       marginBottom: 10,
+      marginTop: 10,
     },
     input: {
       borderWidth: 1,
@@ -237,8 +308,8 @@ export default function EditBookScreen() {
       marginBottom: 20,
     },
     submitButton: {
-      position: "absolute",
-      bottom: 30, // Sayfanın altına yakın ama tam dipte değil
+      //position: "absolute",
+      //bottom: 30, // Sayfanın altına yakın ama tam dipte değil
       alignSelf: "center",
       width: "90%",
       padding: 14,
@@ -253,7 +324,7 @@ export default function EditBookScreen() {
   });
 
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
+    <ScrollView style={{ flex: 1, padding: 20, backgroundColor: theme.background }} contentContainerStyle={{paddingBottom: 80 }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
       <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>{t("kitapduzenle")}</Text>
       {error && <Text style={{ color: "red" }}>{error}</Text>}
@@ -308,11 +379,71 @@ export default function EditBookScreen() {
         </ScrollView>
       )}  
 
+      {/*📌 Yaş Seçimi */}
+      <Text style={[styles.label, { color: theme.text }]}>{t("yassec")}</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, { backgroundColor: theme.tint }]}
+        onPress={() => setShowDropdownAge(!showDropdownAge)}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          {t("yassec")}
+        </Text>
+      </TouchableOpacity>
+
+      {showDropdownAge && (
+        <ScrollView style={styles.dropdownMenu}>
+          {agesList.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryOption,
+                selectedAgeBounds.includes(category) && styles.categorySelected,
+              ]}
+              onPress={() => toggleAgeBounds(category)}
+            >
+              <Text style={{ color: selectedAgeBounds.includes(category) ? "white" : theme.text }}>
+                {t(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}  
+
+      {/*📌 İçerik Seçimi */}
+      <Text style={[styles.label, { color: theme.text }]}>{t("iceriksec")}</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, { backgroundColor: theme.tint }]}
+        onPress={() => setShowDropdownContent(!showDropdownContent)}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          {t("iceriksec")}
+        </Text>
+      </TouchableOpacity>
+
+      {showDropdownContent && (
+        <ScrollView style={styles.dropdownMenu}>
+          {contentsList.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryOption,
+                selectedContents.includes(category) && styles.categorySelected,
+              ]}
+              onPress={() => toggleContent(category)}
+            >
+              <Text style={{ color: selectedContents.includes(category) ? "white" : theme.text }}>
+                {t(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}  
+
       <Text style={[styles.label, { color: theme.text }]}>{t("kapakresmi")}</Text>
       {coverURL ? (
-        <Image source={{ uri: coverURL }} style={{ width: 150, height: 200, marginBottom: 10 }} />
+        <Image source={{ uri: coverURL }} style={{ width: 225, height: 300, marginBottom: 10, alignSelf: "center" }} />
       ) : (
-        <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 150, height: 200, marginBottom: 10 }} />
+        <Image source={{ uri: "https://firebasestorage.googleapis.com/v0/b/seysi-224ce.firebasestorage.app/o/book_covers%2Fno_cover%2Fimages.png?alt=media&token=ea0b3a6a-c8a2-4b91-ab9b-4926e815b900" }} style={{ width: 225, height: 300, marginBottom: 10, alignSelf: "center" }} />
       )}
 
       <TouchableOpacity style={[styles.imageButton, { backgroundColor: theme.tint }]} onPress={handleUploadCover}>
@@ -323,7 +454,7 @@ export default function EditBookScreen() {
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSave} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? t("kaydediliyor"): t("kaydet")}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 

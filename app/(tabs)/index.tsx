@@ -2,7 +2,7 @@ import { View, Text, ActivityIndicator, Image, Pressable, StatusBar, FlatList, S
 import { useAuth } from "../../hooks/useAuth";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { db } from "@/constants/firebaseConfig";
+import { db } from "../../constants/firebaseConfig";
 import { collection, getDocs, query, orderBy, limit, where } from "firebase/firestore";
 import { useTheme } from "@/hooks/useThemeContext";
 import { useLanguage } from "@/context/LanguageContext";

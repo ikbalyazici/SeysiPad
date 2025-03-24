@@ -55,6 +55,7 @@ export default function ChapterDetailScreen() {
   const { selectedFont, fontSize } = useFont();
   const commentListRef = useRef<FlatList<Comment>>(null); // Yorum listesini refere et
   const [menuVisible, setMenuVisible] = useState(false);
+  const [sortAscending, setSortAscending] = useState(false);
   const { t } = useLanguage();
   const fetchReadStatus = async () => {
     if (!user || !chapter) return;
@@ -68,6 +69,13 @@ export default function ChapterDetailScreen() {
       setReadStatus("false"); // Hiç kayıt yoksa "false" yap
     }
   };
+
+  const sortedComments = [...comments].sort((a, b) => {
+    const aTime = a.createdAt.seconds;
+    const bTime = b.createdAt.seconds;
+
+    return sortAscending ? aTime - bTime : bTime - aTime;
+  });
   
   // useEffect içinde çağır:
   useEffect(() => {
@@ -255,7 +263,7 @@ export default function ChapterDetailScreen() {
               {user?.uid === chapter.authorUid && (
                 <TouchableOpacity
                   onPress={() => setMenuVisible(!menuVisible)}
-                  style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
+                  style={{ position: "absolute", top: 5, right: 5, zIndex: 10 }}
                 >
                   <MaterialIcons name="more-vert" size={24} color={theme.text} />
                 </TouchableOpacity>)}
@@ -273,10 +281,10 @@ export default function ChapterDetailScreen() {
                   }}
                 >
                   <Pressable onPress={() => router.push(`/book/edit-chapter?id=${id}`)}>
-                    <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("duzenle")}</Text>
+                    <Text style={{ color: theme.text, padding: 7, paddingHorizontal: 8 }}>{t("duzenle")}</Text>
                   </Pressable>
                   <Pressable onPress={handleDelete}>
-                    <Text style={{ color: "red", paddingVertical: 5 }}>{t("bolumusil")}</Text>
+                    <Text style={{ color: "red", padding: 7, paddingHorizontal: 8 }}>{t("bolumusil")}</Text>
                   </Pressable>
                 </View>
               )}
@@ -330,12 +338,16 @@ export default function ChapterDetailScreen() {
                 )}
               </View>
 
-              <View style={{ marginBottom: 10 }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
                 <Text style={{ fontSize: 18, fontWeight: "bold", color: theme.text }}>{t("yorumlar")}</Text>
+
+                <TouchableOpacity onPress={() => setSortAscending(!sortAscending)}>
+                  <MaterialIcons name={sortAscending ? "arrow-circle-up" : "arrow-circle-down"} size={30} color={theme.text} />
+                </TouchableOpacity>
               </View>
             </>
           }
-          data={comments}
+          data={sortedComments}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={{ marginBottom: 15, padding: 10, borderBottomWidth: 1, borderColor: "#ddd" }}>
@@ -479,6 +491,7 @@ export default function ChapterDetailScreen() {
                 placeholder={t("yorumyaz")}
                 value={newComment}
                 onChangeText={setNewComment}
+                multiline
                 style={{
                   flex: 1,
                   paddingVertical: 10, // Dikey ortalamak için
@@ -503,7 +516,7 @@ export default function ChapterDetailScreen() {
 
 
         <Modal visible={isModalVisible} transparent animationType="slide">
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "rgba(0,0,0,0.8)" }}>
             <View style={{ width: "80%", backgroundColor: theme.modalbg, padding: 20, borderRadius: 10 }}>
               {selectedParagraphPreview && (
                 <Text style={{ fontSize: 14, fontStyle: "italic", color: theme.text, marginBottom: 5 }}>
@@ -514,6 +527,7 @@ export default function ChapterDetailScreen() {
                 placeholder={replyToCommentId ? t("yanıtyaz") : t("yorumyaz")}
                 value={newComment}
                 onChangeText={setNewComment}
+                multiline
                 style={{
                   borderWidth: 1,
                   borderColor: "#ddd",

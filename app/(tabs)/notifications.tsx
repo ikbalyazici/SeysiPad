@@ -145,6 +145,9 @@ export default function NotificationsScreen() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: theme.background }}>
       <StatusBar backgroundColor={theme.background}></StatusBar>
       <FlatList
+        contentContainerStyle={{
+          paddingBottom: 80,
+        }}
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

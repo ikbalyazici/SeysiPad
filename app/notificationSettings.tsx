@@ -19,6 +19,7 @@ export default function NotificationSettings() {
     follow: true,
     book: true,
     chapter: true,
+    like: true
   });
 
   // Firestore'dan kullanıcının mevcut bildirim ayarlarını çek
@@ -39,6 +40,7 @@ export default function NotificationSettings() {
               follow: data.follow ?? prev.follow,
               book: data.book ?? prev.book,
               chapter: data.chapter ?? prev.chapter,
+              like: data.like ?? prev.like
             }));
           }
         } catch (error) {

@@ -184,7 +184,7 @@ export default function ProfileScreen() {
             style={{
               position: "absolute",
               top: 40,
-              right: 10,
+              right: 15,
               backgroundColor: theme.modalbg,
               padding: 10,
               borderRadius: 5,
@@ -193,19 +193,19 @@ export default function ProfileScreen() {
             }}
           >
             <Pressable onPress={() => router.push("../edit-profile")}>
-              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("profilduzenle")}</Text>
+              <Text style={{ color: theme.text, padding: 7, paddingHorizontal: 8 }}>{t("profilduzenle")}</Text>
             </Pressable>
             <Pressable onPress={() => router.push("../languageSettings")}>
-              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("dilsec")}</Text>
+              <Text style={{ color: theme.text, padding: 7, paddingHorizontal: 8 }}>{t("dilsec")}</Text>
             </Pressable>
             <Pressable onPress={() => router.push("../notificationSettings")}>
-              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("bildirim_ayarları")}</Text>
+              <Text style={{ color: theme.text, padding: 7, paddingHorizontal: 8 }}>{t("bildirim_ayarları")}</Text>
             </Pressable>
             <Pressable onPress={() => router.push("../feedbackScreen")}>
-              <Text style={{ color: theme.text, paddingVertical: 5 }}>{t("geribildirim")}</Text>
+              <Text style={{ color: theme.text, padding: 7, paddingHorizontal: 8 }}>{t("geribildirim")}</Text>
             </Pressable>
             <Pressable onPress={logout}>
-              <Text style={{ color: "red", paddingVertical: 5 }}>{t("cikisyap")}</Text>
+              <Text style={{ color: "red", padding: 7, paddingHorizontal: 8 }}>{t("cikisyap")}</Text>
             </Pressable>
             {/* <Pressable
               onPress={() =>
@@ -219,7 +219,7 @@ export default function ProfileScreen() {
                 )
               }
             >
-              <Text style={{ color: "red", paddingVertical: 5 }}>{t("hesapsil")}</Text>
+              <Text style={{ color: "red", padding: 7, paddingHorizontal: 8 }}>{t("hesapsil")}</Text>
             </Pressable> */}
           </View>
         )}

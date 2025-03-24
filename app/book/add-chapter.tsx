@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, Text, TextInput, StatusBar, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StatusBar, StyleSheet, TouchableOpacity, Keyboard, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, ScrollView } from "react-native";
 import { useAuth } from "../../hooks/useAuth";
 import { useAddChapter } from "../../hooks/useAddChapter";
-import { useTheme } from "@/hooks/useThemeContext"; 
+import { useTheme } from "@/hooks/useThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { addDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "@/constants/firebaseConfig";
+import { db } from "../../constants/firebaseConfig";
 
 export default function AddChapterScreen() {
   const { bookId } = useLocalSearchParams(); 
-
   const router = useRouter();
   const { user } = useAuth();
   const { addChapter } = useAddChapter();
@@ -20,6 +19,27 @@ export default function AddChapterScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useLanguage();
+
+  // Klavye durumu için state oluşturuyoruz
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [textareaHeight, setTextareaHeight] = useState(600); // Başlangıçta yüksekliği 600
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+      setTextareaHeight(400); // Klavye açıldığında yükseklik 400
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+      setTextareaHeight(600); // Klavye kapandığında yükseklik 600
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   const sendNotification = async (recipientUid: string, senderUid: string, chapterId: string, text: string) => {
     if (!recipientUid || recipientUid === senderUid) return; 
@@ -60,46 +80,60 @@ export default function AddChapterScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
-      <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>{t("yenibolumekle")}</Text>
-      {error && <Text style={{ color: "red" }}>{error}</Text>}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={{ flex: 1 }}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+        >
+          <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
+          
+          <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
+            <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>
+              {t("yenibolumekle")}
+            </Text>
 
-      <TextInput
-        value={title}
-        onChangeText={setTitle}
-        placeholder={t("bolumbasligi")}
-        placeholderTextColor={theme.inputPlaceholder}
-        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
-      />
+            {error && <Text style={{ color: "red" }}>{error}</Text>}
 
-      <TextInput
-        value={content}
-        onChangeText={setContent}
-        placeholder={t("bolumicerigi")}
-        maxLength={30000}
-        placeholderTextColor={theme.inputPlaceholder}
-        multiline
-        style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
-      />
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder={t("bolumbasligi")}
+              placeholderTextColor={theme.inputPlaceholder}
+              style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
+            />
 
-      <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleAddChapter} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? t("ekleniyor") : t("bolumekle")}</Text>
-      </TouchableOpacity>
-    </View>
+            <TextInput
+              value={content}
+              onChangeText={setContent}
+              placeholder={t("bolumicerigi")}
+              maxLength={30000}
+              placeholderTextColor={theme.inputPlaceholder}
+              multiline
+              style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground, height: textareaHeight }]}
+            />
+
+            <TouchableOpacity 
+              style={[styles.submitButton, { backgroundColor: theme.tint }]} 
+              onPress={handleAddChapter} 
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? t("ekleniyor") : t("bolumekle")}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
+  scrollView: {
+    flexGrow: 1,
     justifyContent: "center",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
@@ -110,20 +144,11 @@ const styles = StyleSheet.create({
   textarea: {
     borderWidth: 1,
     borderRadius: 12,
-    textAlignVertical:"top",
+    textAlignVertical: "top",
     padding: 10,
-    height: 600, // Sabit 30 satır için yükseklik
     marginBottom: 15,
   },
-  placeholderText: {
-    textAlignVertical:"top",
-    textAlign: "auto",
-    marginBottom: 10,
-  },
-
   submitButton: {
-    position: "absolute",
-    bottom: 30, // Sayfanın altına yakın ama tam dipte değil
     alignSelf: "center",
     width: "90%",
     padding: 14,
@@ -133,6 +158,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
-    marginLeft: 8,
   },
 });

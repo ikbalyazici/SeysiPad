@@ -1,23 +1,54 @@
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, Text, TextInput, Button, ActivityIndicator, StatusBar, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+  KeyboardAvoidingView} from "react-native";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../constants/firebaseConfig"; // Firebase bağlantısını doğru verdiğinden emin ol
+import { db } from "../../constants/firebaseConfig";
 import { useAuth } from "../../hooks/useAuth";
-import { useTheme } from "@/hooks/useThemeContext"; 
+import { useTheme } from "@/hooks/useThemeContext";
 import { useLanguage } from "@/context/LanguageContext";
 
-
 export default function EditChapterScreen() {
-  const { id } = useLocalSearchParams(); // 📌 ID'yi al
+  const { id } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { theme } = useTheme(); 
+  const { theme } = useTheme();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const {t } = useLanguage();
+  const { t } = useLanguage();
+  
+  // Klavye durumu için state oluşturuyoruz
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [textareaHeight, setTextareaHeight] = useState(600); // Başlangıçta yüksekliği 600
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+      setTextareaHeight(500); // Klavye açıldığında yükseklik 400
+    });
+
+    const keyboardDidHideListener = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+      setTextareaHeight(600); // Klavye kapandığında yükseklik 600
+    });
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchChapter = async () => {
@@ -53,8 +84,7 @@ export default function EditChapterScreen() {
 
     if (!title || !content) {
       setError(t("bosolamazlar"));
-      return { 
-        success: false };
+      return { success: false };
     }
 
     try {
@@ -70,56 +100,61 @@ export default function EditChapterScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.background }}>
-        <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-        <ActivityIndicator size="large" color={theme.tint} />
-      </View>
-    );
-  }
-
   return (
-    <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
-      <StatusBar barStyle={theme.bar} backgroundColor={theme.background}></StatusBar>
-      <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color:theme.text }}>{t("bolumduzenle")}</Text>
-      {error && <Text style={{ color: "red" }}>{error}</Text>}
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === "ios" ? "padding" : "height"} 
+      style={{ flex: 1 }} 
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollView}
+          keyboardShouldPersistTaps="handled"
+        >
+          <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
+          
+          <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
+            <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 10, color: theme.text }}>
+              {t("bolumduzenle")}
+            </Text>
 
-      <TextInput
-        value={title}
-        onChangeText={setTitle}
-        placeholder={t("bolumbasligi")}
-        placeholderTextColor={theme.inputPlaceholder}
-        style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
-      />
+            {error && <Text style={{ color: "red" }}>{error}</Text>}
 
-      <TextInput
-        value={content}
-        onChangeText={setContent}
-        placeholder={t("bolumicerigi")}
-        maxLength={30000}
-        placeholderTextColor={theme.inputPlaceholder}
-        multiline
-        style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
-      />
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              placeholder={t("bolumbasligi")}
+              placeholderTextColor={theme.inputPlaceholder}
+              style={[styles.input, { borderColor: theme.tint, backgroundColor: theme.inputBackground }]}
+            />
 
-      <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleSave} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? t("kaydediliyor") : t("kaydet")}</Text>
-      </TouchableOpacity>
-    </View>
+            <TextInput
+              value={content}
+              onChangeText={setContent}
+              placeholder={t("bolumicerigi")}
+              maxLength={30000}
+              placeholderTextColor={theme.inputPlaceholder}
+              multiline
+              style={[styles.textarea, { borderColor: theme.tint, backgroundColor: theme.inputBackground, height: textareaHeight }]}
+            />
+
+            <TouchableOpacity 
+              style={[styles.submitButton, { backgroundColor: theme.tint }]} 
+              onPress={handleSave} 
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? t("kaydediliyor") : t("kaydet")}</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
+  scrollView: {
+    flexGrow: 1,
     justifyContent: "center",
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
@@ -130,20 +165,11 @@ const styles = StyleSheet.create({
   textarea: {
     borderWidth: 1,
     borderRadius: 12,
-    textAlignVertical:"top",
+    textAlignVertical: "top",
     padding: 10,
-    height: 600, // Sabit 30 satır için yükseklik
     marginBottom: 15,
   },
-  placeholderText: {
-    textAlignVertical:"top",
-    textAlign: "auto",
-    marginBottom: 10,
-  },
-
   submitButton: {
-    position: "absolute",
-    bottom: 30, // Sayfanın altına yakın ama tam dipte değil
     alignSelf: "center",
     width: "90%",
     padding: 14,
@@ -153,6 +179,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     fontWeight: "bold",
-    marginLeft: 8,
   },
 });

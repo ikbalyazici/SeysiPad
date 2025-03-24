@@ -9,7 +9,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useLanguage } from "@/context/LanguageContext";
 import { addDoc, collection, getDocs } from "firebase/firestore";
-import { db } from "@/constants/firebaseConfig";
+import { db } from "../../constants/firebaseConfig";
 
 export default function AddBookScreen() {
   const auth = useAuth();
@@ -40,9 +40,32 @@ export default function AddBookScreen() {
     "Şiir",
     "Hikaye"
   ];
+
+  const agesList = [
+    "GenelOkuyucu",
+    "13-14",
+    "15-16",
+    "17-18",
+    "19-20",
+    "21+",
+  ];
+  
+  const contentsList = [
+    "GenelOkuyucu",
+    "Şiddet",
+    "KorkuGerilim",
+    "KüfürArgo",
+    "Cinselİçerik",
+    "UyuşturucuAlkol",
+    "AğırPsikolojikTemalar",
+  ];
   
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAgeBounds, setSelectedAgeBounds] = useState<string[]>([]);
+  const [selectedContents, setSelectedContents] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false); // Dropdown aç/kapat
+  const [showDropdownAge, setShowDropdownAge] = useState(false); // Dropdown aç/kapat
+  const [showDropdownContent, setShowDropdownContent] = useState(false); // Dropdown aç/kapat
 
   const sendNotification = async (recipientUid: string, senderUid: string, bookId: string, text: string) => {
     if (!recipientUid || recipientUid === senderUid) return; 
@@ -85,6 +108,30 @@ export default function AddBookScreen() {
     });
   };
 
+  const toggleAgeBounds = (category: string) => {
+    setSelectedAgeBounds((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else if (prev.length < 3) {
+        return [...prev, category];
+      } else {
+        Alert.alert(t("hata"), t("enfazla3yas"));
+        return prev;
+      }
+    });
+  };
+
+     // 📌 İçerik Sınırları Seçimini Güncelle
+  const toggleContent = (category: string) => {
+    setSelectedContents((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category); // Seçilmişse kaldır
+      } else {
+        return [...prev, category]; // Yeni seçim ekle
+      }
+    });
+  };  
+
   // 📌 Kitap ekleme işlemi
   const handleAddBook = async () => {
     if (!user) {
@@ -102,10 +149,20 @@ export default function AddBookScreen() {
       return;
     }
 
+    if (selectedAgeBounds.length === 0) {
+      Alert.alert(t("hata"), t("enkatyasgerekli"));
+      return;
+    }
+
+    if (selectedContents.length === 0) {
+      Alert.alert(t("hata"), t("enkaticerikgerekli"));
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const result = await addBook(user.uid, title, description, 0, 0, selectedCategories);
+      const result = await addBook(user.uid, title, description, 0, 0, selectedCategories, selectedAgeBounds, selectedContents);
 
       if (!result.success) {
         throw new Error(t("gecersizgiris"));
@@ -126,6 +183,8 @@ export default function AddBookScreen() {
       setDescription("");
       setCoverImage(null);
       setSelectedCategories([]);
+      setSelectedAgeBounds([]);
+      setSelectedContents([]);
 
       const followersRef = collection(db, "users", user.uid as string, "followers");
       const querySnapshot = await getDocs(followersRef);
@@ -154,7 +213,7 @@ export default function AddBookScreen() {
       marginBottom: 10,
     },
     dropdownMenu: {
-      maxHeight: 200,
+      //maxHeight: 200,
       borderRadius: 10,
       borderWidth: 1,
       paddingVertical: 5,
@@ -213,8 +272,8 @@ export default function AddBookScreen() {
       marginBottom: 20,
     },
     submitButton: {
-      position: "absolute",
-      bottom: 30, // Sayfanın altına yakın ama tam dipte değil
+      // position: "absolute",
+      // bottom: 30, // Sayfanın altına yakın ama tam dipte değil
       alignSelf: "center",
       width: "90%",
       padding: 14,
@@ -229,7 +288,7 @@ export default function AddBookScreen() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <ScrollView style={{ flex: 1, padding: 20, backgroundColor: theme.background }} contentContainerStyle={{paddingBottom: 80 }}>
       <StatusBar barStyle={theme.bar} backgroundColor={theme.background} />
       
       <Text style={[styles.label, { color: theme.text }]}>{t("kitapadi")}</Text>
@@ -282,6 +341,66 @@ export default function AddBookScreen() {
         </ScrollView>
       )}
 
+      {/*📌 Yaş Seçimi */}
+      <Text style={[styles.label, { color: theme.text }]}>{t("yassec")}</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, { backgroundColor: theme.tint }]}
+        onPress={() => setShowDropdownAge(!showDropdownAge)}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          {t("yassec")}
+        </Text>
+      </TouchableOpacity>
+
+      {showDropdownAge && (
+        <ScrollView style={styles.dropdownMenu}>
+          {agesList.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryOption,
+                selectedAgeBounds.includes(category) && styles.categorySelected,
+              ]}
+              onPress={() => toggleAgeBounds(category)}
+            >
+              <Text style={{ color: selectedAgeBounds.includes(category) ? "white" : theme.text }}>
+                {t(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}  
+
+      {/*📌 İçerik Seçimi */}
+      <Text style={[styles.label, { color: theme.text }]}>{t("iceriksec")}</Text>
+      <TouchableOpacity
+        style={[styles.dropdownButton, { backgroundColor: theme.tint }]}
+        onPress={() => setShowDropdownContent(!showDropdownContent)}
+      >
+        <Text style={{ color: "white", fontWeight: "bold" }}>
+          {t("iceriksec")}
+        </Text>
+      </TouchableOpacity>
+
+      {showDropdownContent && (
+        <ScrollView style={styles.dropdownMenu}>
+          {contentsList.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[
+                styles.categoryOption,
+                selectedContents.includes(category) && styles.categorySelected,
+              ]}
+              onPress={() => toggleContent(category)}
+            >
+              <Text style={{ color: selectedContents.includes(category) ? "white" : theme.text }}>
+                {t(category)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}  
+
       <Text style={[styles.label, { color: theme.text }]}>{t("kapakresmi")}</Text>
       {coverImage ? (
         <Image source={{ uri: coverImage }} style={styles.coverImage} />
@@ -297,7 +416,7 @@ export default function AddBookScreen() {
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: theme.tint }]} onPress={handleAddBook} disabled={loading}>
         <Text style={styles.buttonText}>{loading ? t("ekleniyor") : t("kitapekle")}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 

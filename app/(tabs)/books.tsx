@@ -5,7 +5,7 @@ import { useTheme } from "@/hooks/useThemeContext";
 import { useEffect, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/constants/firebaseConfig";
+import { db } from "../../constants/firebaseConfig";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function BooksScreen() {
@@ -99,7 +99,7 @@ export default function BooksScreen() {
         {menuVisible && (
           <View style={{
             position: "absolute",
-            top: 60,
+            top: 70,
             right: 20,
             backgroundColor: theme.modalbg,
             padding: 10,
@@ -108,7 +108,11 @@ export default function BooksScreen() {
             elevation: 5,
           }}>
             {["likesAsc", "likesDesc", "readsAsc", "readsDesc", "newest", "oldest"].map((option) => (
-              <Pressable key={option} onPress={() => { setSortOption(option); setMenuVisible(false); }}>
+              <Pressable 
+                  key={option} 
+                  onPress={() => { setSortOption(option); setMenuVisible(false); }}
+                  style={{padding: 4, paddingHorizontal: 8}}
+              >
                 <Text style={{ color: theme.text, padding: 5 }}>{t(option)}</Text>
               </Pressable>
             ))}
@@ -117,7 +121,7 @@ export default function BooksScreen() {
 
         {/* 📌 Kategori Seçimi */}
               <TouchableOpacity
-                style={{ backgroundColor: theme.tint, padding: 12, borderRadius: 10, alignItems: "center", marginBottom: 10, }}
+                style={{ backgroundColor: theme.tint, padding: 12, borderRadius: 10, alignItems: "center", marginBottom: 10, marginTop: 8 }}
                 onPress={() => setShowDropdown(!showDropdown)}
               >
                 <Text style={{ color: "white", fontWeight: "bold" }}>

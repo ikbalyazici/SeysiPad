@@ -4,7 +4,7 @@ import { useFetchBooks } from "../../hooks/useFetchBooks";
 import { useTheme } from "@/hooks/useThemeContext";
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/constants/firebaseConfig";
+import { db } from "../../constants/firebaseConfig";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function BooksScreen() {
@@ -100,7 +100,7 @@ export default function BooksScreen() {
         {menuVisible && (
           <View style={{
             position: "absolute",
-            top: 60,
+            top: 70,
             right: 20,
             backgroundColor: theme.modalbg,
             padding: 10,
@@ -109,7 +109,11 @@ export default function BooksScreen() {
             elevation: 5,
           }}>
             {["likesAsc", "likesDesc", "readsAsc", "readsDesc", "newest", "oldest"].map((option) => (
-              <Pressable key={option} onPress={() => { setSortOption(option); setMenuVisible(false); }}>
+              <Pressable 
+                  key={option} 
+                  onPress={() => { setSortOption(option); setMenuVisible(false); }}
+                  style={{padding: 4, paddingHorizontal: 8}}
+              >
                 <Text style={{ color: theme.text, padding: 5 }}>{t(option)}</Text>
               </Pressable>
             ))}
